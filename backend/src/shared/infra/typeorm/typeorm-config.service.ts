@@ -16,7 +16,10 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
         __dirname +
           '/../../../modules/**/infra/persistence/*{.typeorm-entity,.entity}{.ts,.js}',
       ],
-      migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
+      migrations: [
+        __dirname + '/../../../migrations/**/*{.ts,.js}',
+        __dirname + '/migrations/**/*{.ts,.js}',
+      ],
       migrationsRun: false,
       namingStrategy: new SnakeNamingStrategy(),
       ...this.configService.dbConfig,

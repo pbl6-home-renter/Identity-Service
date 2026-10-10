@@ -10,6 +10,7 @@ services:
     environment:
       DB_HOST: app_database
       DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-identity_db}
     ports:
       - "${PORT:-3001}:${PORT:-3001}"
     depends_on:
@@ -24,7 +25,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_MULTIPLE_DATABASES: ${DB_DATABASE:-app_db}
+      POSTGRES_MULTIPLE_DATABASES: ${DB_DATABASE:-identity_db}
       TZ: "UTC"
       PGTZ: "UTC"
     ports:

@@ -49,7 +49,7 @@ export class ApiConfigService {
       port: this.getNumber('DB_PORT', 5432),
       username: this.getString('DB_USERNAME', 'postgres'),
       password: this.getString('DB_PASSWORD', 'postgres'),
-      database: this.getString('DB_DATABASE', 'app_db'),
+      database: this.getString('DB_DATABASE', 'identity_db'),
       logging: this.getBoolean('ENABLE_ORM_LOGS', false),
       ssl: isProd ? { rejectUnauthorized: false } : false,
     };
