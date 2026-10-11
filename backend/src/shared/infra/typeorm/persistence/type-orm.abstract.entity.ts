@@ -7,17 +7,19 @@ import {
 
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 
-export abstract class AbstractEntity {
+abstract class AbstractEntity {
   @PrimaryGeneratedColumn('uuid')
   id: Uuid;
 
   @CreateDateColumn({
     type: 'timestamptz',
+    name: 'created_at',
   })
   createdAt: Date;
 
   @UpdateDateColumn({
     type: 'timestamptz',
+    name: 'updated_at',
   })
   updatedAt: Date;
 
@@ -28,3 +30,5 @@ export abstract class AbstractEntity {
   })
   isDeleted: boolean;
 }
+
+export { AbstractEntity as BaseEntity };
