@@ -9,10 +9,6 @@ import {
 import { Request, Response } from 'express';
 import { BaseException } from '../shared/domain/exceptions/base.exception';
 
-/**
- * Standard Error Response envelope according to api-conventions.md §1 & §3.
- * Client receives ONLY statusCode and code.
- */
 interface ErrorResponsePayload {
   statusCode: number;
   code: string;
@@ -41,16 +37,13 @@ export class LoggingExceptionFilter implements ExceptionFilter {
     let status: number;
     let code: string;
 
-    // 1. Domain Exceptions (Clean Architecture BaseException)
     if (exception instanceof BaseException) {
       status = exception.statusCode || HttpStatus.BAD_REQUEST;
       code =
         exception.code || HTTP_STATUS_TO_DEFAULT_CODE[status] || 'BAD_REQUEST';
       const logMessage = `[DomainException] ${exception.name} (${status}) [${code}]: ${exception.message}`;
       this.logger.warn(`${logMessage} - Path: ${request.url}`);
-    }
-    // 2. NestJS HttpExceptions (ValidationPipe, NotFoundException, etc.)
-    else if (exception instanceof HttpException) {
+    } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
       let logMessage: string;
@@ -58,7 +51,6 @@ export class LoggingExceptionFilter implements ExceptionFilter {
       if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
         const resObj = exceptionResponse as Record<string, any>;
 
-        // Handle ValidationPipe errors -> map to 422 VALIDATION_FAILED
         if (
           status === HttpStatus.UNPROCESSABLE_ENTITY ||
           (status === HttpStatus.BAD_REQUEST && Array.isArray(resObj.message))
@@ -79,9 +71,7 @@ export class LoggingExceptionFilter implements ExceptionFilter {
       }
 
       this.logger.warn(`${logMessage} - Path: ${request.url}`);
-    }
-    // 3. Unhandled Standard Errors & Unknown Exceptions
-    else if (exception instanceof Error) {
+    } else if (exception instanceof Error) {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       code = 'INTERNAL_ERROR';
       this.logger.error(
@@ -96,7 +86,6 @@ export class LoggingExceptionFilter implements ExceptionFilter {
       );
     }
 
-    // Client response strictly contains only statusCode and code per spec
     const errorPayload: ErrorResponsePayload = {
       statusCode: status,
       code,

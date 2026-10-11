@@ -3,11 +3,12 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggingExceptionFilter } from './filter/error-handling-exception-filter';
 import { ResponseTransformInterceptor } from './interceptor/response-transform.interceptor';
 import { SharedModule } from './shared/shared.module';
-import { SampleModule } from './modules/sample/sample.module';
 import { HealthModule } from './modules/health/health.module';
+import { UsersModule } from './modules/users/users.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
-  imports: [SharedModule, SampleModule, HealthModule],
+  imports: [SharedModule, UsersModule, AuthModule, HealthModule],
   providers: [
     {
       provide: APP_FILTER,
