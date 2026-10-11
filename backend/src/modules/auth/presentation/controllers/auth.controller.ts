@@ -10,13 +10,12 @@ import { CommandBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ResponseCode } from 'shared/decorators/response-code.decorator';
-import { RegisterRequest } from '../request/register.request';
-import { LoginRequest } from '../request/login.request';
+import { RegisterRequestDto } from '../request/register.request.dto';
+import { LoginRequestDto } from '../request/login.request.dto';
 import { AuthResponseDto } from '../response/auth.response.dto';
-import { RegisterCommand } from '../../use-case/commands/register.command';
-import { LoginCommand } from '../../use-case/commands/login.command';
-import { AuthResultVo } from '../../domain/value-objects/auth-result.vo';
-import { AuthCookieHelper } from '../helpers/auth-cookie.helper';
+import { RegisterCommand } from '../../use-case/commands/implements/register.command';
+import { LoginCommand } from '../../use-case/commands/implements/login.command';
+import { AuthResult } from '../../use-case/results/auth.result';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -38,23 +37,20 @@ export class AuthController {
     description: 'Validation failed or role not allowed',
   })
   async register(
-    @Body() request: RegisterRequest,
+    @Body() request: RegisterRequestDto,
     @Res({ passthrough: true }) response: Response,
   ): Promise<AuthResponseDto> {
-    const result: AuthResultVo = await this.commandBus.execute(
-      new RegisterCommand(
-        request.name,
-        request.email,
-        request.phone,
-        request.password,
-        request.role,
-      ),
+    const result: AuthResult = await this.commandBus.execute(
+      RegisterCommand.create(request),
     );
 
     response.setHeader('Location', '/api/v1/me');
-    AuthCookieHelper.setRefreshToken(response, result.refreshToken, true);
 
-    return AuthResponseDto.create(result.accessToken, result.user);
+    return AuthResponseDto.create(
+      result.accessToken,
+      result.refreshToken,
+      result.user,
+    );
   }
 
   @Post('login')
@@ -68,17 +64,15 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiResponse({ status: 403, description: 'Account locked' })
-  async login(
-    @Body() request: LoginRequest,
-    @Res({ passthrough: true }) response: Response,
-  ): Promise<AuthResponseDto> {
-    const rememberMe = request.rememberMe ?? true;
-    const result: AuthResultVo = await this.commandBus.execute(
-      new LoginCommand(request.identifier, request.password, rememberMe),
+  async login(@Body() request: LoginRequestDto): Promise<AuthResponseDto> {
+    const result: AuthResult = await this.commandBus.execute(
+      LoginCommand.create(request),
     );
 
-    AuthCookieHelper.setRefreshToken(response, result.refreshToken, rememberMe);
-
-    return AuthResponseDto.create(result.accessToken, result.user);
+    return AuthResponseDto.create(
+      result.accessToken,
+      result.refreshToken,
+      result.user,
+    );
   }
 }

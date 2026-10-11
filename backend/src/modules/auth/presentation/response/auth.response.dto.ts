@@ -1,32 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../../../users/domain/entities/user';
-
-export class AuthUserDto {
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
-  id: string;
-
-  @ApiProperty({ example: 'Lê Văn An' })
-  name: string;
-
-  @ApiProperty({ example: 'lan@example.com' })
-  email: string;
-
-  @ApiProperty({ example: '0901234567' })
-  phone: string;
-
-  @ApiProperty({ example: 'tenant' })
-  role: string;
-
-  static fromDomain(user: User): AuthUserDto {
-    const dto = new AuthUserDto();
-    dto.id = user.id;
-    dto.name = user.name;
-    dto.email = user.email;
-    dto.phone = user.phone;
-    dto.role = user.role;
-    return dto;
-  }
-}
+import { AuthUserDto } from './auth-user.dto';
 
 export class AuthResponseDto {
   @ApiProperty({
@@ -35,12 +9,23 @@ export class AuthResponseDto {
   })
   accessToken: string;
 
+  @ApiProperty({
+    example: 'c2f71887-b9c1-4b10-86b3-e5e6e30b355a',
+    description: 'Refresh token',
+  })
+  refreshToken: string;
+
   @ApiProperty({ type: AuthUserDto })
   user: AuthUserDto;
 
-  static create(accessToken: string, user: User): AuthResponseDto {
+  static create(
+    accessToken: string,
+    refreshToken: string,
+    user: User,
+  ): AuthResponseDto {
     const dto = new AuthResponseDto();
     dto.accessToken = accessToken;
+    dto.refreshToken = refreshToken;
     dto.user = AuthUserDto.fromDomain(user);
     return dto;
   }

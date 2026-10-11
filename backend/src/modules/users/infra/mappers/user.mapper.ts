@@ -1,8 +1,8 @@
 import { User } from '../../domain/entities/user';
-import { UserEntity as UserTypeormEntity } from '../persistence/user.entity';
+import { UserEntity } from '../persistence/user.entity';
 
 export class UserMapper {
-  static toDomain(raw: UserTypeormEntity): User {
+  static toDomain(raw: UserEntity): User {
     return User.create({
       id: raw.id,
       phone: raw.phone,
@@ -19,8 +19,8 @@ export class UserMapper {
     });
   }
 
-  static toPersistence(domain: User): UserTypeormEntity {
-    const raw = new UserTypeormEntity();
+  static toPersistence(domain: User): UserEntity {
+    const raw = new UserEntity();
     raw.id = domain.id;
     raw.phone = domain.phone;
     raw.email = domain.email;

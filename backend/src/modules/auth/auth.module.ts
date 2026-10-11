@@ -4,11 +4,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from '../users/users.module';
 import { RefreshTokenEntity } from './infra/persistence/refresh-token.entity';
-import { TypeOrmAuthRepository } from './infra/persistence/auth.repository';
+import { AuthPostgresRepository } from './infra/persistence/auth.repository';
 import { AUTH_DI_TOKEN } from './auth.di-token';
 import { TokenService } from './infra/services/token.service';
-import { RegisterCommandHandler } from './use-case/commands/register.command.handler';
-import { LoginCommandHandler } from './use-case/commands/login.command.handler';
+import { RegisterCommandHandler } from './use-case/commands/handlers/register.command.handler';
+import { LoginCommandHandler } from './use-case/commands/handlers/login.command.handler';
 import { AuthController } from './presentation/controllers/auth.controller';
 
 const commandHandlers = [RegisterCommandHandler, LoginCommandHandler];
@@ -25,7 +25,7 @@ const commandHandlers = [RegisterCommandHandler, LoginCommandHandler];
     TokenService,
     {
       provide: AUTH_DI_TOKEN.REPOSITORY,
-      useClass: TypeOrmAuthRepository,
+      useClass: AuthPostgresRepository,
     },
     ...commandHandlers,
   ],

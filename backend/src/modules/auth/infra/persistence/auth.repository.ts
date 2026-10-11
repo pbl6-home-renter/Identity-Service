@@ -5,7 +5,7 @@ import { AuthRepository } from '../../domain/repositories/auth.repository';
 import { RefreshTokenEntity } from './refresh-token.entity';
 
 @Injectable()
-export class TypeOrmAuthRepository implements AuthRepository {
+export class AuthPostgresRepository implements AuthRepository {
   constructor(
     @InjectRepository(RefreshTokenEntity)
     private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,

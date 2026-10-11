@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserRepository } from '../../domain/repositories/user.repository';
 import { User } from '../../domain/entities/user';
-import { UserEntity as UserTypeormEntity } from './user.entity';
+import { UserEntity } from './user.entity';
 import { UserMapper } from '../mappers/user.mapper';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { IOffsetPaginationQueryRequestDto } from 'shared/domain/pagination/i-offset-pagination.query.request.dto';
@@ -11,10 +11,10 @@ import { IPaginationResponseDto } from 'shared/domain/pagination/i-pagination.re
 import { TypeOrmPaginator } from 'shared/infra/typeorm/pagination/typeorm.paginator';
 
 @Injectable()
-export class TypeOrmUserRepository implements UserRepository {
+export class UserPostgresRepository implements UserRepository {
   constructor(
-    @InjectRepository(UserTypeormEntity)
-    private readonly repository: Repository<UserTypeormEntity>,
+    @InjectRepository(UserEntity)
+    private readonly repository: Repository<UserEntity>,
   ) {}
 
   async save(user: User): Promise<void> {
