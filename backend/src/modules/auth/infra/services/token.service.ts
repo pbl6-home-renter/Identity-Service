@@ -1,25 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { createHash, randomUUID } from 'crypto';
-import { ApiConfigService } from 'shared/services/api-config.service';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { UserRole } from '../../../users/domain/enums/user-role.enum';
 
 @Injectable()
 export class TokenService {
-  constructor(
-    private readonly jwtService: JwtService,
-    private readonly apiConfigService: ApiConfigService,
-  ) {}
+  constructor(private readonly jwtService: JwtService) {}
 
   generateAccessToken(userId: Uuid, role: UserRole): string {
-    return this.jwtService.sign(
-      { sub: userId, role },
-      {
-        secret: this.apiConfigService.jwtSecret,
-        expiresIn: '15m',
-      },
-    );
+    return this.jwtService.sign({ sub: userId, role });
   }
 
   generateRefreshToken(rememberMe: boolean = true): {

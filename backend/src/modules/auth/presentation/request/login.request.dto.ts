@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { LoginCommand } from '../../use-case/commands/implements/login.command';
 
 export class LoginRequestDto {
   @ApiProperty({
@@ -26,4 +27,12 @@ export class LoginRequestDto {
   @IsBoolean()
   @IsOptional()
   rememberMe?: boolean;
+
+  toCommand(): LoginCommand {
+    return LoginCommand.create(this);
+  }
+
+  static toCommand(request: LoginRequestDto): LoginCommand {
+    return LoginCommand.create(request);
+  }
 }

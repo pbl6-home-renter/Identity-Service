@@ -10,13 +10,20 @@ import { TokenService } from './infra/services/token.service';
 import { RegisterCommandHandler } from './use-case/commands/handlers/register.command.handler';
 import { LoginCommandHandler } from './use-case/commands/handlers/login.command.handler';
 import { AuthController } from './presentation/controllers/auth.controller';
+import { ApiConfigService } from 'shared/services/api-config.service';
 
 const commandHandlers = [RegisterCommandHandler, LoginCommandHandler];
 
 @Module({
   imports: [
     CqrsModule,
-    JwtModule.register({}),
+    JwtModule.registerAsync({
+      inject: [ApiConfigService],
+      useFactory: (configService: ApiConfigService) => ({
+        secret: configService.jwtSecret,
+        signOptions: { expiresIn: '15m' },
+      }),
+    }),
     TypeOrmModule.forFeature([RefreshTokenEntity]),
     UsersModule,
   ],
