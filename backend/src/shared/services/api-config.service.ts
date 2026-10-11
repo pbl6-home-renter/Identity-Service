@@ -41,6 +41,10 @@ export class ApiConfigService {
     return this.getString('LOG_LEVEL', 'debug');
   }
 
+  get jwtSecret(): string {
+    return this.getString('JWT_SECRET');
+  }
+
   get dbConfig() {
     const isProd = this.isProduction;
 
