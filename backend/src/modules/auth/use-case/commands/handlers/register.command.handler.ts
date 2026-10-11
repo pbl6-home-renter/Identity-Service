@@ -4,9 +4,9 @@ import { BcryptUtils } from 'utils/bcrypt.utils';
 import { RegisterCommand } from '../implements/register.command';
 import { AuthResult } from '../../results/auth.result';
 import { USERS_DI_TOKEN } from '../../../../users/users.di-token';
-import { UserRepository } from '../../../../users/domain/repositories/user.repository';
+import { IUserRepository } from '../../../../users/domain/repositories/user.repository.interface';
 import { AUTH_DI_TOKEN } from '../../../auth.di-token';
-import { AuthRepository } from '../../../domain/repositories/auth.repository';
+import { IAuthRepository } from '../../../domain/repositories/auth.repository.interface';
 import { TokenService } from '../../../infra/services/token.service';
 import { UserRole } from '../../../../users/domain/enums/user-role.enum';
 import { UserStatus } from '../../../../users/domain/enums/user-status.enum';
@@ -23,16 +23,16 @@ export class RegisterCommandHandler implements ICommandHandler<
 > {
   constructor(
     @Inject(USERS_DI_TOKEN.REPOSITORY)
-    private readonly userRepository: UserRepository,
+    private readonly userRepository: IUserRepository,
     @Inject(AUTH_DI_TOKEN.REPOSITORY)
-    private readonly authRepository: AuthRepository,
+    private readonly authRepository: IAuthRepository,
     private readonly tokenService: TokenService,
   ) {}
 
   async execute(command: RegisterCommand): Promise<AuthResult> {
     const { name, email, phone, password, role } = command;
 
-    if (role === UserRole.ADMIN || (role as string) === 'admin') {
+    if (role === UserRole.ADMIN) {
       throw new RoleNotAllowedException(role);
     }
 
@@ -76,6 +76,6 @@ export class RegisterCommandHandler implements ICommandHandler<
 
     await this.authRepository.saveRefreshToken(refreshTokenEntity);
 
-    return new AuthResult(accessToken, rawToken, user);
+    return AuthResult.create(accessToken, rawToken, user);
   }
 }

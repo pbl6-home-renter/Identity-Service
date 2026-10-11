@@ -1,5 +1,5 @@
 import { RefreshTokenEntity } from '../../infra/persistence/refresh-token.entity';
 
-export interface AuthRepository {
+export interface IAuthRepository {
   saveRefreshToken(token: RefreshTokenEntity): Promise<void>;
 }

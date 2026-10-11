@@ -6,4 +6,12 @@ export class AuthResult {
     public readonly refreshToken: string,
     public readonly user: User,
   ) {}
+
+  static create(
+    accessToken: string,
+    refreshToken: string,
+    user: User,
+  ): AuthResult {
+    return new AuthResult(accessToken, refreshToken, user);
+  }
 }

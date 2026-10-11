@@ -1,13 +1,6 @@
 import { ICommand } from '@nestjs/cqrs';
 import { UserRole } from '../../../../users/domain/enums/user-role.enum';
-
-export interface CreateRegisterCommandProps {
-  name: string;
-  email: string;
-  phone: string;
-  password: string;
-  role: UserRole;
-}
+import { RegisterRequestDto } from '../../../presentation/request/register.request.dto';
 
 export class RegisterCommand implements ICommand {
   constructor(
@@ -18,13 +11,13 @@ export class RegisterCommand implements ICommand {
     public readonly role: UserRole,
   ) {}
 
-  static create(props: CreateRegisterCommandProps): RegisterCommand {
+  static create(request: RegisterRequestDto): RegisterCommand {
     return new RegisterCommand(
-      props.name,
-      props.email,
-      props.phone,
-      props.password,
-      props.role,
+      request.name,
+      request.email,
+      request.phone,
+      request.password,
+      request.role,
     );
   }
 }

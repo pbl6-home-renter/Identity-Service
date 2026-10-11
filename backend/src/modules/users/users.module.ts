@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './infra/persistence/user.entity';
-import { UserPostgresRepository } from './infra/persistence/user.repository';
+import { UserRepository } from './infra/persistence/user.repository';
 import { USERS_DI_TOKEN } from './users.di-token';
 
 @Module({
@@ -9,7 +9,7 @@ import { USERS_DI_TOKEN } from './users.di-token';
   providers: [
     {
       provide: USERS_DI_TOKEN.REPOSITORY,
-      useClass: UserPostgresRepository,
+      useClass: UserRepository,
     },
   ],
   exports: [USERS_DI_TOKEN.REPOSITORY, TypeOrmModule],
