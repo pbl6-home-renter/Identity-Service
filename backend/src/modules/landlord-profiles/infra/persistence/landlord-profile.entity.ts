@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
 import { BaseEntity } from 'shared/infra/typeorm/persistence/type-orm.abstract.entity';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
-import { UserEntity } from './user.entity';
+import { UserEntity } from 'modules/users/infra/persistence/user.entity';
 
 @Entity('landlord_profiles')
 export class LandlordProfileEntity extends BaseEntity {

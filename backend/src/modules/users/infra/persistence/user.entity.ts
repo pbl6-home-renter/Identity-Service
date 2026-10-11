@@ -2,7 +2,7 @@ import { Column, Entity, OneToMany, OneToOne } from 'typeorm';
 import { BaseEntity } from 'shared/infra/typeorm/persistence/type-orm.abstract.entity';
 import { UserRole } from '../../domain/enums/user-role.enum';
 import { UserStatus } from '../../domain/enums/user-status.enum';
-import { LandlordProfileEntity } from './landlord-profile.entity';
+import { LandlordProfileEntity } from 'modules/landlord-profiles/infra/persistence/landlord-profile.entity';
 import { RefreshTokenEntity } from '../../../auth/infra/persistence/refresh-token.entity';
 
 @Entity('users')
