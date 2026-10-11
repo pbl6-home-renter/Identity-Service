@@ -24,7 +24,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_MULTIPLE_DATABASES: ${DB_DATABASE:-app_db}
+      POSTGRES_MULTIPLE_DATABASES: ${DB_DATABASE:-identity_db}
       TZ: "UTC"
       PGTZ: "UTC"
     ports:
