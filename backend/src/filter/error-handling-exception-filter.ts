@@ -16,13 +16,13 @@ interface ErrorResponsePayload {
 
 const HTTP_STATUS_TO_DEFAULT_CODE: Record<number, string> = {
   [HttpStatus.BAD_REQUEST]: 'BAD_REQUEST',
-  [HttpStatus.UNAUTHORIZED]: 'INVALID_TOKEN',
+  [HttpStatus.UNAUTHORIZED]: 'UNAUTHORIZED',
   [HttpStatus.FORBIDDEN]: 'FORBIDDEN',
-  [HttpStatus.NOT_FOUND]: 'NOT_FOUND',
+  [HttpStatus.NOT_FOUND]: 'RESOURCE_NOT_FOUND',
   [HttpStatus.CONFLICT]: 'CONFLICT',
   [HttpStatus.UNPROCESSABLE_ENTITY]: 'VALIDATION_FAILED',
-  [HttpStatus.TOO_MANY_REQUESTS]: 'RATE_LIMIT_EXCEEDED',
-  [HttpStatus.INTERNAL_SERVER_ERROR]: 'INTERNAL_ERROR',
+  [HttpStatus.TOO_MANY_REQUESTS]: 'TOO_MANY_REQUESTS',
+  [HttpStatus.INTERNAL_SERVER_ERROR]: 'INTERNAL_SERVER_ERROR',
 };
 
 @Catch()
@@ -51,16 +51,16 @@ export class LoggingExceptionFilter implements ExceptionFilter {
       if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
         const resObj = exceptionResponse as Record<string, any>;
 
-        if (
+        if (resObj.code && typeof resObj.code === 'string') {
+          code = resObj.code;
+          logMessage = `[HttpException] ${exception.name} (${status}) [${code}]: ${resObj.message || exception.message}`;
+        } else if (
           status === HttpStatus.UNPROCESSABLE_ENTITY ||
           (status === HttpStatus.BAD_REQUEST && Array.isArray(resObj.message))
         ) {
           status = HttpStatus.UNPROCESSABLE_ENTITY;
           code = 'VALIDATION_FAILED';
           logMessage = `[ValidationException] (${status}) [${code}]: ${JSON.stringify(resObj.message)}`;
-        } else if (resObj.code && typeof resObj.code === 'string') {
-          code = resObj.code;
-          logMessage = `[HttpException] ${exception.name} (${status}) [${code}]: ${resObj.message || exception.message}`;
         } else {
           code = HTTP_STATUS_TO_DEFAULT_CODE[status] || 'BAD_REQUEST';
           logMessage = `[HttpException] ${exception.name} (${status}) [${code}]: ${resObj.message || exception.message}`;
@@ -71,16 +71,26 @@ export class LoggingExceptionFilter implements ExceptionFilter {
       }
 
       this.logger.warn(`${logMessage} - Path: ${request.url}`);
+    } else if (
+      (exception as any)?.status === 400 &&
+      ((exception as any)?.type === 'entity.parse.failed' ||
+        exception instanceof SyntaxError)
+    ) {
+      status = HttpStatus.BAD_REQUEST;
+      code = 'INVALID_JSON';
+      this.logger.warn(
+        `[InvalidJsonException] (${status}) [${code}]: Syntax error in JSON body - Path: ${request.url}`,
+      );
     } else if (exception instanceof Error) {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
-      code = 'INTERNAL_ERROR';
+      code = 'INTERNAL_SERVER_ERROR';
       this.logger.error(
         `[UnhandledException] ${exception.message} - Path: ${request.url}`,
         exception.stack,
       );
     } else {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
-      code = 'INTERNAL_ERROR';
+      code = 'INTERNAL_SERVER_ERROR';
       this.logger.error(
         `[UnknownException] ${String(exception)} - Path: ${request.url}`,
       );

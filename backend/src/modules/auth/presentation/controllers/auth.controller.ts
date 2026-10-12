@@ -1,18 +1,18 @@
 import {
   Body,
   Controller,
+  Header,
   HttpCode,
   HttpStatus,
   Post,
-  Res,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import type { Response } from 'express';
 import { ResponseCode } from 'shared/decorators/response-code.decorator';
 import { RegisterRequestDto } from '../request/register.request.dto';
 import { LoginRequestDto } from '../request/login.request.dto';
 import { AuthResponseDto } from '../response/auth.response.dto';
+import { AuthResponseCodeConstant } from '../constants/auth-response-code.constant';
 import { RegisterCommand } from '../../use-case/commands/implements/register.command';
 import { LoginCommand } from '../../use-case/commands/implements/login.command';
 import { AuthResult } from '../../use-case/results/auth.result';
@@ -24,7 +24,8 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  @ResponseCode('USER_REGISTERED')
+  @Header('Location', '/api/v1/me')
+  @ResponseCode(AuthResponseCodeConstant.USER_REGISTERED)
   @ApiOperation({ summary: 'Register a new tenant or landlord account' })
   @ApiResponse({
     status: 201,
@@ -38,13 +39,10 @@ export class AuthController {
   })
   async register(
     @Body() request: RegisterRequestDto,
-    @Res({ passthrough: true }) response: Response,
   ): Promise<AuthResponseDto> {
     const result: AuthResult = await this.commandBus.execute(
       RegisterCommand.create(request),
     );
-
-    response.setHeader('Location', '/api/v1/me');
 
     return AuthResponseDto.create(
       result.accessToken,
@@ -55,7 +53,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ResponseCode('LOGIN_SUCCESS')
+  @ResponseCode(AuthResponseCodeConstant.SESSION_STARTED)
   @ApiOperation({ summary: 'Log in with email or phone number' })
   @ApiResponse({
     status: 200,
