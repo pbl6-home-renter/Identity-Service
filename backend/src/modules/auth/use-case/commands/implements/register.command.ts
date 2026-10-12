@@ -13,11 +13,9 @@ export class RegisterCommand implements ICommand {
 
   static create(request: RegisterRequestDto): RegisterCommand {
     return new RegisterCommand(
-      typeof request.name === 'string' ? request.name.trim() : request.name,
-      typeof request.email === 'string'
-        ? request.email.trim().toLowerCase()
-        : request.email,
-      typeof request.phone === 'string' ? request.phone.trim() : request.phone,
+      request.name,
+      request.email,
+      request.phone,
       request.password,
       request.role,
     );

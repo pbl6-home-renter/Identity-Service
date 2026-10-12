@@ -1,14 +1,13 @@
 import {
   Body,
   Controller,
+  Header,
   HttpCode,
   HttpStatus,
   Post,
-  Res,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import type { Response } from 'express';
 import { ResponseCode } from 'shared/decorators/response-code.decorator';
 import { RegisterRequestDto } from '../request/register.request.dto';
 import { LoginRequestDto } from '../request/login.request.dto';
@@ -24,6 +23,7 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @Header('Location', '/api/v1/me')
   @ResponseCode('USER_REGISTERED')
   @ApiOperation({ summary: 'Register a new tenant or landlord account' })
   @ApiResponse({
@@ -38,19 +38,10 @@ export class AuthController {
   })
   async register(
     @Body() request: RegisterRequestDto,
-    @Res({ passthrough: true }) response: Response,
   ): Promise<AuthResponseDto> {
     const result: AuthResult = await this.commandBus.execute(
       RegisterCommand.create(request),
     );
-
-    response.setHeader('Location', '/api/v1/me');
-    response.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/api/v1/auth',
-    });
 
     return AuthResponseDto.create(
       result.accessToken,
@@ -70,20 +61,10 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiResponse({ status: 403, description: 'Account locked' })
-  async login(
-    @Body() request: LoginRequestDto,
-    @Res({ passthrough: true }) response: Response,
-  ): Promise<AuthResponseDto> {
+  async login(@Body() request: LoginRequestDto): Promise<AuthResponseDto> {
     const result: AuthResult = await this.commandBus.execute(
       LoginCommand.create(request),
     );
-
-    response.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/api/v1/auth',
-    });
 
     return AuthResponseDto.create(
       result.accessToken,
