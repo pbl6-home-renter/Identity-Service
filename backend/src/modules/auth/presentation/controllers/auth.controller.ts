@@ -12,6 +12,7 @@ import { ResponseCode } from 'shared/decorators/response-code.decorator';
 import { RegisterRequestDto } from '../request/register.request.dto';
 import { LoginRequestDto } from '../request/login.request.dto';
 import { AuthResponseDto } from '../response/auth.response.dto';
+import { AuthResponseCodeConstant } from '../constants/auth-response-code.constant';
 import { RegisterCommand } from '../../use-case/commands/implements/register.command';
 import { LoginCommand } from '../../use-case/commands/implements/login.command';
 import { AuthResult } from '../../use-case/results/auth.result';
@@ -24,7 +25,7 @@ export class AuthController {
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @Header('Location', '/api/v1/me')
-  @ResponseCode('USER_REGISTERED')
+  @ResponseCode(AuthResponseCodeConstant.USER_REGISTERED)
   @ApiOperation({ summary: 'Register a new tenant or landlord account' })
   @ApiResponse({
     status: 201,
@@ -52,7 +53,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ResponseCode('SESSION_STARTED')
+  @ResponseCode(AuthResponseCodeConstant.SESSION_STARTED)
   @ApiOperation({ summary: 'Log in with email or phone number' })
   @ApiResponse({
     status: 200,
