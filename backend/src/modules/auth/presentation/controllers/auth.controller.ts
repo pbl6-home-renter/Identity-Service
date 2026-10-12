@@ -45,6 +45,12 @@ export class AuthController {
     );
 
     response.setHeader('Location', '/api/v1/me');
+    response.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/api/v1/auth',
+    });
 
     return AuthResponseDto.create(
       result.accessToken,
@@ -55,7 +61,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ResponseCode('LOGIN_SUCCESS')
+  @ResponseCode('SESSION_STARTED')
   @ApiOperation({ summary: 'Log in with email or phone number' })
   @ApiResponse({
     status: 200,
@@ -64,10 +70,20 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiResponse({ status: 403, description: 'Account locked' })
-  async login(@Body() request: LoginRequestDto): Promise<AuthResponseDto> {
+  async login(
+    @Body() request: LoginRequestDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<AuthResponseDto> {
     const result: AuthResult = await this.commandBus.execute(
       LoginCommand.create(request),
     );
+
+    response.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/api/v1/auth',
+    });
 
     return AuthResponseDto.create(
       result.accessToken,

@@ -1,9 +1,5 @@
-import {
-  HttpStatus,
-  Logger,
-  RequestMethod,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Logger, RequestMethod } from '@nestjs/common';
+import { AppValidationPipe } from './pipe/app-validation.pipe';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
@@ -28,18 +24,26 @@ async function bootstrap() {
 
   app.enableCors();
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      stopAtFirstError: false,
-      errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-    }),
-  );
+  app.useGlobalPipes(new AppValidationPipe());
 
-  app.useBodyParser('json', { limit: '10mb' });
+  app.useBodyParser('json', { limit: '10mb', strict: false });
   app.useBodyParser('urlencoded', { extended: true, limit: '10mb' });
+
+  app.use((req: any, _res: any, next: any) => {
+    if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+      const contentLength = req.headers['content-length'];
+      const transferEncoding = req.headers['transfer-encoding'];
+      if (
+        contentLength === '0' ||
+        (!contentLength &&
+          !transferEncoding &&
+          (req.body === undefined || Object.keys(req.body || {}).length === 0))
+      ) {
+        req.body = undefined;
+      }
+    }
+    next();
+  });
 
   configureSwagger(app, configService);
   configLogging(app, configService);
