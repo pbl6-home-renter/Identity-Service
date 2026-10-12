@@ -17,7 +17,6 @@ export class AppValidationPipe extends ValidationPipe {
       stopAtFirstError: false,
       errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
       exceptionFactory: (errors: ValidationError[]) => {
-        // 1. Property validation errors (excluding unexpected extra fields)
         const propertyErrors = errors.filter(
           (err) =>
             err.constraints && !('whitelistValidation' in err.constraints),
@@ -27,7 +26,6 @@ export class AppValidationPipe extends ValidationPipe {
           const firstError = propertyErrors[0];
           const constraints = firstError.constraints || {};
 
-          // Prioritize missing/null required field code
           if (constraints.isRequired) {
             return new HttpException(
               { statusCode: 422, code: constraints.isRequired },
@@ -35,7 +33,6 @@ export class AppValidationPipe extends ValidationPipe {
             );
           }
 
-          // Otherwise return specific format/rule error code
           const otherConstraintKeys = Object.keys(constraints);
           const firstKey = otherConstraintKeys[0];
           const code = constraints[firstKey] || 'VALIDATION_FAILED';
@@ -46,7 +43,6 @@ export class AppValidationPipe extends ValidationPipe {
           );
         }
 
-        // 2. Extra unexpected field errors (forbidNonWhitelisted)
         const hasUnexpected = errors.some(
           (err) => err.constraints && 'whitelistValidation' in err.constraints,
         );
@@ -57,7 +53,6 @@ export class AppValidationPipe extends ValidationPipe {
           );
         }
 
-        // 3. Fallback
         return new HttpException(
           { statusCode: 422, code: 'VALIDATION_FAILED' },
           HttpStatus.UNPROCESSABLE_ENTITY,

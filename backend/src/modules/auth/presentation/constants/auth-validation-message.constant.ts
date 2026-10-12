@@ -77,5 +77,3 @@ export class AuthValidationMessageConstant {
     INVALID: AuthValidationMessageConstant.ROLE_INVALID,
   } as const;
 }
-
-export const AUTH_VALIDATION_MESSAGES = AuthValidationMessageConstant;
