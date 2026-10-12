@@ -9,9 +9,12 @@ import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { IOffsetPaginationQueryRequestDto } from 'shared/domain/pagination/i-offset-pagination.query.request.dto';
 import { IPaginationResponseDto } from 'shared/domain/pagination/i-pagination.response.dto';
 import { TypeOrmPaginator } from 'shared/infra/typeorm/pagination/typeorm.paginator';
+import { LandlordProfileMapper } from 'modules/landlord-profiles/infra/mappers/landlord-profile.mapper';
+import { IGetMeQueryRepository } from '../../use-case/queries/repositories/get-me-query.repository.interface';
+import { GetMeUserResult } from '../../use-case/queries/results/get-me-user.result';
 
 @Injectable()
-export class UserRepository implements IUserRepository {
+export class UserRepository implements IUserRepository, IGetMeQueryRepository {
   constructor(
     @InjectRepository(UserEntity)
     private readonly repository: Repository<UserEntity>,
@@ -30,6 +33,31 @@ export class UserRepository implements IUserRepository {
       return null;
     }
     return UserMapper.toDomain(raw);
+  }
+
+  async findByUserId(id: Uuid): Promise<GetMeUserResult | null> {
+    const raw = await this.repository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect(
+        'user.landlordProfile',
+        'landlordProfile',
+        'landlordProfile.is_deleted = :profileIsDeleted',
+        { profileIsDeleted: false },
+      )
+      .where('user.id = :id', { id })
+      .andWhere('user.is_deleted = :isDeleted', { isDeleted: false })
+      .getOne();
+
+    if (!raw) {
+      return null;
+    }
+
+    return {
+      user: UserMapper.toDomain(raw),
+      landlordProfile: raw.landlordProfile
+        ? LandlordProfileMapper.toDomain(raw.landlordProfile)
+        : null,
+    };
   }
 
   async findByEmail(email: string): Promise<User | null> {
