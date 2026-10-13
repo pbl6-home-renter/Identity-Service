@@ -1,6 +1,10 @@
 name: Database Keepalive
 
 on:
+  push:
+    branches:
+      - feat/identity-supabase-setup
+
   schedule:
     - cron: "17 3 * * *"
 
@@ -42,7 +46,8 @@ jobs:
             exit 1
           fi
 
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && \
+          if [ "${{ github.event_name }}" = "push" ] || \
+             [ "${{ github.event_name }}" = "workflow_dispatch" ] && \
              [ "${{ inputs.dry_run }}" = "true" ]; then
             npx --yes tsx scripts/keep-alive.ts --dry-run
           else
