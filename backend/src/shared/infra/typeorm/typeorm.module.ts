@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule as NestTypeOrmModule } from '@nestjs/typeorm';
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { ApiConfigService } from 'shared/services/api-config.service';
+import { DatabaseConfigService } from 'shared/services/database-config.service';
 import { TypeOrmConfigService } from './typeorm-config.service';
 
 @Module({
   imports: [
     NestTypeOrmModule.forRootAsync({
       useClass: TypeOrmConfigService,
-      inject: [ApiConfigService],
+      inject: [DatabaseConfigService],
       dataSourceFactory: async (options: DataSourceOptions | undefined) => {
         if (!options) {
           throw new Error(
