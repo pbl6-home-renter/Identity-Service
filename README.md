@@ -19,14 +19,15 @@ Boilerplate chuẩn doanh nghiệp (Enterprise-ready) tinh gọn và rõ ràng, 
 ## 📁 Cấu trúc thư mục (Directory Structure)
 
 ```text
-nest-clean-architecture-boilerplate/
-├── docker-compose.yml              # Dựng trọn bộ: Backend + PostgreSQL
+Identity-Service/
+├── .github/workflows/              # CI/CD và Supabase database keepalive
 ├── .env.example                    # Biến môi trường mẫu
-├── postgres/                       # Dockerfile & script khởi tạo PostgreSQL
+├── docker-compose.yml              # Chạy backend container (DB dùng Supabase)
 └── backend/
     ├── Dockerfile                  # Multi-stage Docker build
-    ├── start.sh                    # Script chạy migration -> seed -> start app
+    ├── start.sh                    # Script chạy migration -> start app
     ├── package.json
+    ├── scripts/                    # Keepalive cho Supabase
     ├── tsconfig.json
     └── src/
         ├── main.ts                 # Bootstrap REST API & Swagger
@@ -38,7 +39,7 @@ nest-clean-architecture-boilerplate/
         ├── shared/                 # Core dùng chung cho toàn bộ ứng dụng
         │   ├── shared.module.ts    # Global Module
         │   ├── configuration/      # Config Swagger, Logging, Naming Strategy
-        │   ├── services/           # ApiConfigService (type-safe config)
+        │           ├── services/           # API and database configuration services
         │   ├── domain/             # Base Entity, Base Repo, Base Exception, VOs
         │   └── infra/              # TypeORM setup & config
         │
@@ -81,7 +82,7 @@ sequenceDiagram
     participant Handler as CreateSampleCommandHandler
     participant Domain as SampleEntity (Domain)
     participant Repo as SampleRepository (Infra)
-    participant DB as PostgreSQL Database
+    participant DB as Supabase PostgreSQL
 
     Client->>Controller: POST /api/v1/samples (CreateSampleRequest)
     Controller->>CommandBus: execute(new CreateSampleCommand(...))
@@ -97,18 +98,18 @@ sequenceDiagram
 
 ## 🛠️ Hướng dẫn cài đặt & Khởi chạy
 
-### Cách 1: Khởi chạy bằng Docker Compose (Khuyên dùng)
+### Cách 1: Khởi chạy backend bằng Docker Compose
 
-Chỉ với **1 lệnh duy nhất**, Docker sẽ khởi tạo PostgreSQL và Backend:
+Docker Compose chỉ chạy backend; PostgreSQL được kết nối qua `DATABASE_URL` trên Supabase.
+Đặt `DATABASE_URL` trong file `.env` ở thư mục `Identity-Service` trước khi chạy:
 
 ```bash
-cd nest-clean-architecture-boilerplate
-docker-compose up --build -d
+cd Identity-Service
+docker compose up --build -d
 ```
 
 - **Backend API**: `http://localhost:3001/api/v1`
 - **Swagger Docs**: `http://localhost:3001/swagger`
-- **PostgreSQL**: `localhost:5432` (User/Pass: `postgres`/`postgres`)
 
 ---
 
@@ -116,16 +117,12 @@ docker-compose up --build -d
 
 #### 1. Cài đặt dependencies:
 ```bash
-cd nest-clean-architecture-boilerplate/backend
-npm install
+cd Identity-Service/backend
+npm ci
 ```
 
 #### 2. Cấu hình biến môi trường:
-Tạo file `.env` từ `.env.example`:
-```bash
-cp .env.example .env
-```
-Chỉnh sửa thông số kết nối Database cho phù hợp với máy của bạn.
+Đặt `DATABASE_URL` cho Supabase trong file `.env` tại thư mục `Identity-Service` (không ghi đè file `.env` hiện có). `MIGRATION_DATABASE_URL` có thể được đặt riêng nếu migration cần kết nối trực tiếp; khi bỏ trống, migration dùng `DATABASE_URL`. `DB_SSL` có thể để trống để tự nhận diện Supabase.
 
 #### 3. Chạy Database Migrations:
 ```bash
@@ -136,6 +133,14 @@ npm run migration:run
 ```bash
 npm run start:dev
 ```
+
+#### 5. Kiểm tra kết nối Supabase (tùy chọn):
+Từ thư mục `Identity-Service/backend`, chạy:
+```bash
+npx --yes tsx scripts/keep-alive.ts --dry-run
+```
+
+GitHub Actions keepalive chạy theo lịch mỗi ngày. Thêm secret `SUPABASE_DATABASE_URL` trong repository settings; có thể chạy thủ công ở chế độ kiểm tra kết nối (`dry_run`). Workflow deploy cần `DOCKERHUB_USERNAME` và `DOCKERHUB_TOKEN`; để bật deploy lên EC2, thêm `EC2_HOST`, `EC2_USER` và `EC2_SSH_KEY`.
 
 ---
 
