@@ -15,7 +15,6 @@ import { AuthResponseDto } from '../response/auth.response.dto';
 import { AuthResponseCodeConstant } from '../constants/auth-response-code.constant';
 import { RegisterCommand } from '../../use-case/commands/implements/register.command';
 import { LoginCommand } from '../../use-case/commands/implements/login.command';
-import { AuthResult } from '../../use-case/results/auth.result';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -40,14 +39,8 @@ export class AuthController {
   async register(
     @Body() request: RegisterRequestDto,
   ): Promise<AuthResponseDto> {
-    const result: AuthResult = await this.commandBus.execute(
-      RegisterCommand.create(request),
-    );
-
-    return AuthResponseDto.create(
-      result.accessToken,
-      result.refreshToken,
-      result.user,
+    return AuthResponseDto.fromResult(
+      await this.commandBus.execute(RegisterCommand.create(request)),
     );
   }
 
@@ -63,14 +56,8 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiResponse({ status: 403, description: 'Account locked' })
   async login(@Body() request: LoginRequestDto): Promise<AuthResponseDto> {
-    const result: AuthResult = await this.commandBus.execute(
-      LoginCommand.create(request),
-    );
-
-    return AuthResponseDto.create(
-      result.accessToken,
-      result.refreshToken,
-      result.user,
+    return AuthResponseDto.fromResult(
+      await this.commandBus.execute(LoginCommand.create(request)),
     );
   }
 }

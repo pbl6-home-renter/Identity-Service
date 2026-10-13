@@ -11,7 +11,7 @@ import { TokenService } from '../../../infra/services/token.service';
 import { UserRole } from '../../../../users/domain/enums/user-role.enum';
 import { UserStatus } from '../../../../users/domain/enums/user-status.enum';
 import { User } from '../../../../users/domain/entities/user';
-import { RefreshTokenEntity } from '../../../infra/persistence/refresh-token.entity';
+import { RefreshToken } from '../../../domain/entities/refresh-token';
 import { EmailAlreadyExistsException } from '../../../domain/exceptions/email-already-exists.exception';
 import { PhoneAlreadyExistsException } from '../../../domain/exceptions/phone-already-exists.exception';
 import { RoleNotAllowedException } from '../../../domain/exceptions/role-not-allowed.exception';
@@ -61,20 +61,21 @@ export class RegisterCommandHandler implements ICommandHandler<
 
     await this.userRepository.save(user);
 
+    const { rawToken, tokenHash, expiresAt } =
+      this.tokenService.generateRefreshToken(true);
+
+    const refreshToken = RefreshToken.create({
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+      revokedAt: null,
+    });
+
+    await this.authRepository.saveRefreshToken(refreshToken);
     const accessToken = this.tokenService.generateAccessToken(
       user.id,
       user.role,
     );
-    const { rawToken, tokenHash, expiresAt } =
-      this.tokenService.generateRefreshToken(true);
-
-    const refreshTokenEntity = new RefreshTokenEntity();
-    refreshTokenEntity.userId = user.id;
-    refreshTokenEntity.tokenHash = tokenHash;
-    refreshTokenEntity.expiresAt = expiresAt;
-    refreshTokenEntity.revokedAt = null;
-
-    await this.authRepository.saveRefreshToken(refreshTokenEntity);
 
     return AuthResult.create(accessToken, rawToken, user);
   }

@@ -1,3 +1,11 @@
+import { RefreshTokenEntity } from 'modules/auth/infra/persistence/refresh-token.entity';
+import { LandlordProfileEntity } from 'modules/landlord-profiles/infra/persistence/landlord-profile.entity';
+import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/payout-account';
+import { UserRole } from '../../domain/enums/user-role.enum';
+import { UserNotFoundException } from '../../domain/exceptions/user-not-found.exception';
+import { InvalidCurrentPasswordException } from '../../domain/exceptions/invalid-current-password.exception';
+import { PhoneAlreadyExistsException } from 'modules/auth/domain/exceptions/phone-already-exists.exception';
+import { BcryptUtils } from 'utils/bcrypt.utils';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,7 +19,7 @@ import { IPaginationResponseDto } from 'shared/domain/pagination/i-pagination.re
 import { TypeOrmPaginator } from 'shared/infra/typeorm/pagination/typeorm.paginator';
 import { LandlordProfileMapper } from 'modules/landlord-profiles/infra/mappers/landlord-profile.mapper';
 import { IGetMeQueryRepository } from '../../use-case/queries/repositories/get-me-query.repository.interface';
-import { GetMeUserResult } from '../../use-case/queries/results/get-me-user.result';
+import { GetMeUserModel } from '../../use-case/queries/models/get-me-user.model';
 
 @Injectable()
 export class UserRepository implements IUserRepository, IGetMeQueryRepository {
@@ -25,6 +33,84 @@ export class UserRepository implements IUserRepository, IGetMeQueryRepository {
     await this.repository.save(raw);
   }
 
+  async saveProfile(
+    user: User,
+    payoutAccount?: PayoutAccount | null,
+  ): Promise<PayoutAccount | null> {
+    try {
+      return await this.repository.manager.transaction(async (manager) => {
+        const stored = await manager.findOne(UserEntity, {
+          where: { id: user.id, isDeleted: false },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!stored) throw new UserNotFoundException();
+        await manager.update(UserEntity, stored.id, {
+          name: user.name,
+          phone: user.phone,
+        });
+        if (stored.role !== UserRole.LANDLORD) return null;
+        const profiles = manager.getRepository(LandlordProfileEntity);
+        let profile = await profiles.findOne({
+          where: { userId: user.id, isDeleted: false },
+        });
+        if (payoutAccount !== undefined) {
+          if (payoutAccount || profile) {
+            profile = profile ?? profiles.create({ userId: user.id });
+            Object.assign(profile, {
+              bankCode: payoutAccount?.bankCode ?? null,
+              accountNumber: payoutAccount?.accountNumber ?? null,
+              accountName: payoutAccount?.accountName ?? null,
+            });
+            profile = await profiles.save(profile);
+          }
+        }
+        return profile?.bankCode && profile.accountNumber && profile.accountName
+          ? {
+              bankCode: profile.bankCode,
+              accountNumber: profile.accountNumber,
+              accountName: profile.accountName,
+            }
+          : null;
+      });
+    } catch (error) {
+      const pg = (
+        error as { driverError?: { code?: string; constraint?: string } }
+      ).driverError;
+      if (
+        pg?.code === '23505' &&
+        pg.constraint === 'UQ_a000cca60bcf04454e727699490'
+      )
+        throw new PhoneAlreadyExistsException(user.phone);
+      throw error;
+    }
+  }
+
+  async changePassword(
+    userId: Uuid,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    await this.repository.manager.transaction(async (manager) => {
+      const user = await manager.findOne(UserEntity, {
+        where: { id: userId, isDeleted: false },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!user) throw new UserNotFoundException();
+      if (!(await BcryptUtils.compare(currentPassword, user.password)))
+        throw new InvalidCurrentPasswordException();
+      await manager.update(UserEntity, userId, {
+        password: await BcryptUtils.hash(newPassword),
+      });
+      await manager
+        .createQueryBuilder()
+        .update(RefreshTokenEntity)
+        .set({ revokedAt: new Date() })
+        .where('user_id = :userId', { userId })
+        .andWhere('revoked_at IS NULL')
+        .execute();
+    });
+  }
+
   async findById(id: Uuid): Promise<User | null> {
     const raw = await this.repository.findOne({
       where: { id, isDeleted: false },
@@ -35,7 +121,7 @@ export class UserRepository implements IUserRepository, IGetMeQueryRepository {
     return UserMapper.toDomain(raw);
   }
 
-  async findByUserId(id: Uuid): Promise<GetMeUserResult | null> {
+  async findByUserId(id: Uuid): Promise<GetMeUserModel | null> {
     const raw = await this.repository
       .createQueryBuilder('user')
       .leftJoinAndSelect(

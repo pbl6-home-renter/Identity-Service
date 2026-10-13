@@ -3,25 +3,8 @@ import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/pa
 import { UserRole } from '../../domain/enums/user-role.enum';
 import { UserStatus } from '../../domain/enums/user-status.enum';
 import { User } from '../../domain/entities/user';
-
-export class PayoutAccountResponseDto {
-  @ApiProperty({ example: '970422' })
-  bankCode: string;
-
-  @ApiProperty({ example: '**43210' })
-  accountNumber: string;
-
-  @ApiProperty({ example: 'LE VAN AN' })
-  accountName: string;
-
-  static fromDomain(payoutAccount: PayoutAccount): PayoutAccountResponseDto {
-    const dto = new PayoutAccountResponseDto();
-    dto.bankCode = payoutAccount.bankCode;
-    dto.accountNumber = `**${payoutAccount.accountNumber.slice(-5)}`;
-    dto.accountName = payoutAccount.accountName;
-    return dto;
-  }
-}
+import { CurrentUserProfileResult } from '../../use-case/results/current-user-profile.result';
+import { PayoutAccountResponseDto } from './payout-account.response.dto';
 
 export class UserProfileResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
@@ -60,5 +43,9 @@ export class UserProfileResponseDto {
       ? PayoutAccountResponseDto.fromDomain(payoutAccount)
       : null;
     return dto;
+  }
+
+  static fromResult(result: CurrentUserProfileResult): UserProfileResponseDto {
+    return UserProfileResponseDto.create(result.user, result.payoutAccount);
   }
 }

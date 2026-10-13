@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../../../users/domain/entities/user';
+import { AuthResult } from '../../use-case/results/auth.result';
 import { AuthUserDto } from './auth-user.dto';
 
 export class AuthResponseDto {
@@ -28,5 +29,13 @@ export class AuthResponseDto {
     dto.refreshToken = refreshToken;
     dto.user = AuthUserDto.fromDomain(user);
     return dto;
+  }
+
+  static fromResult(result: AuthResult): AuthResponseDto {
+    return AuthResponseDto.create(
+      result.accessToken,
+      result.refreshToken,
+      result.user,
+    );
   }
 }

@@ -17,6 +17,9 @@ export class AppValidationPipe extends ValidationPipe {
       stopAtFirstError: false,
       errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
       exceptionFactory: (errors: ValidationError[]) => {
+        const flatten = (items: ValidationError[]): ValidationError[] =>
+          items.flatMap((item) => [item, ...flatten(item.children ?? [])]);
+        errors = flatten(errors);
         const propertyErrors = errors.filter(
           (err) =>
             err.constraints && !('whitelistValidation' in err.constraints),
@@ -34,7 +37,10 @@ export class AppValidationPipe extends ValidationPipe {
           }
 
           const otherConstraintKeys = Object.keys(constraints);
-          const firstKey = otherConstraintKeys[0];
+          const firstKey =
+            ['isString', 'isNotEmpty', 'isObject'].find(
+              (key) => key in constraints,
+            ) ?? otherConstraintKeys[0];
           const code = constraints[firstKey] || 'VALIDATION_FAILED';
 
           return new HttpException(
@@ -76,6 +82,25 @@ export class AppValidationPipe extends ValidationPipe {
       }
     }
 
-    return super.transform(value, metadata);
+    try {
+      return await super.transform(value, metadata);
+    } catch (error) {
+      const dto = metadata.metatype as typeof metadata.metatype & {
+        unexpectedFieldCode?: string;
+      };
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === 422 &&
+        dto?.unexpectedFieldCode
+      ) {
+        const payload = error.getResponse() as { code?: string };
+        if (payload.code === 'UNEXPECTED_FIELD')
+          throw new HttpException(
+            { statusCode: 422, code: dto.unexpectedFieldCode },
+            422,
+          );
+      }
+      throw error;
+    }
   }
 }

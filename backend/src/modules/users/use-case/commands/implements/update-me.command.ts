@@ -8,7 +8,7 @@ export class UpdateMeCommand implements ICommand {
     readonly userId: Uuid,
     readonly name?: string,
     readonly phone?: string,
-    readonly payoutAccount?: PayoutAccount,
+    readonly payoutAccount?: PayoutAccount | null,
   ) {}
 
   static create(userId: Uuid, request: UpdateMeRequestDto): UpdateMeCommand {
@@ -16,7 +16,7 @@ export class UpdateMeCommand implements ICommand {
       userId,
       request.name,
       request.phone,
-      request.payoutAccount?.toDomain(),
+      request.payoutAccount === null ? null : request.payoutAccount?.toDomain(),
     );
   }
 }

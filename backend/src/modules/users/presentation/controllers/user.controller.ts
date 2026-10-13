@@ -12,6 +12,8 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiExtraModels,
+  getSchemaPath,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -25,23 +27,17 @@ import { UserRole } from '../../domain/enums/user-role.enum';
 import { ChangePasswordCommand } from '../../use-case/commands/implements/change-password.command';
 import { UpdateMeCommand } from '../../use-case/commands/implements/update-me.command';
 import { GetMeQuery } from '../../use-case/queries/implements/get-me.query';
-import { CurrentUserProfileResult } from '../../use-case/results/current-user-profile.result';
 import { UserResponseCodeConstant } from '../constants/user-response-code.constant';
 import { ChangePasswordRequestDto } from '../request/change-password.request.dto';
 import { UpdateMeRequestDto } from '../request/update-me.request.dto';
 import { UserProfileResponseDto } from '../response/user-profile.response.dto';
-
-const SELF_SERVICE_ROLES = [
-  UserRole.LANDLORD,
-  UserRole.TENANT,
-  UserRole.ADMIN,
-] as const;
-
-@ApiTags('Users')
+import { CurrentUserUpdateResponseDto } from '../response/current-user-update.response.dto';
+@ApiTags('User')
 @ApiBearerAuth()
+@ApiExtraModels(UserProfileResponseDto, CurrentUserUpdateResponseDto)
 @Controller()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(...SELF_SERVICE_ROLES)
+@Roles(UserRole.LANDLORD, UserRole.TENANT, UserRole.ADMIN)
 export class UserController {
   constructor(
     private readonly queryBus: QueryBus,
@@ -50,55 +46,78 @@ export class UserController {
 
   @Get('me')
   @HttpCode(HttpStatus.OK)
-  @ResponseCode(UserResponseCodeConstant.USER_PROFILE_FETCHED)
-  @ApiOperation({ summary: 'Get the current user profile' })
+  @ResponseCode(UserResponseCodeConstant.USER_CURRENT_FETCHED)
+  @ApiOperation({ operationId: 'getCurrentUser', summary: 'Get current user' })
   @ApiResponse({
     status: 200,
-    description: 'Current user profile fetched successfully',
-    type: UserProfileResponseDto,
+    schema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['statusCode', 'code', 'data'],
+      properties: {
+        statusCode: { type: 'integer', enum: [200] },
+        code: { type: 'string', enum: ['USER_CURRENT_FETCHED'] },
+        data: { $ref: getSchemaPath(UserProfileResponseDto) },
+      },
+    },
   })
-  @ApiResponse({
-    status: 401,
-    description: 'Missing, expired, or invalid token',
-  })
-  @ApiResponse({ status: 403, description: 'Role is not allowed' })
   async getMe(
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<UserProfileResponseDto> {
-    const result: CurrentUserProfileResult = await this.queryBus.execute(
-      GetMeQuery.create(user.id),
+    return UserProfileResponseDto.fromResult(
+      await this.queryBus.execute(GetMeQuery.create(user.id)),
     );
-
-    return UserProfileResponseDto.create(result.user, result.payoutAccount);
   }
 
   @Patch('me')
+  @ApiResponse({ status: 409, description: 'DUPLICATE_PHONE' })
+  @ApiResponse({ status: 422, description: 'VALIDATION_FAILED' })
   @HttpCode(HttpStatus.OK)
-  @ResponseCode(UserResponseCodeConstant.USER_PROFILE_UPDATED)
-  @ApiOperation({ summary: 'Update the current user profile' })
+  @ResponseCode(UserResponseCodeConstant.USER_CURRENT_UPDATED)
+  @ApiOperation({
+    operationId: 'updateCurrentUser',
+    summary: 'Update current user',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Current user profile updated successfully',
-    type: UserProfileResponseDto,
+    schema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['statusCode', 'code', 'data'],
+      properties: {
+        statusCode: { type: 'integer', enum: [200] },
+        code: { type: 'string', enum: ['USER_CURRENT_UPDATED'] },
+        data: { $ref: getSchemaPath(CurrentUserUpdateResponseDto) },
+      },
+    },
   })
-  @ApiResponse({ status: 409, description: 'Phone number already exists' })
   async updateMe(
     @CurrentUser() user: AuthenticatedUser,
     @Body() request: UpdateMeRequestDto,
-  ): Promise<UserProfileResponseDto> {
-    const result: CurrentUserProfileResult = await this.commandBus.execute(
-      UpdateMeCommand.create(user.id, request),
+  ): Promise<CurrentUserUpdateResponseDto> {
+    return CurrentUserUpdateResponseDto.fromResult(
+      await this.commandBus.execute(UpdateMeCommand.create(user.id, request)),
     );
-
-    return UserProfileResponseDto.create(result.user, result.payoutAccount);
   }
 
   @Put('me/password')
-  @HttpCode(HttpStatus.OK)
-  @ResponseCode(UserResponseCodeConstant.PASSWORD_CHANGED)
-  @ApiOperation({ summary: 'Change the current user password' })
-  @ApiResponse({ status: 200, description: 'Password changed successfully' })
-  @ApiResponse({ status: 400, description: 'Current password is invalid' })
+  @ApiResponse({
+    status: 401,
+    description: 'UNAUTHORIZED or INVALID_CREDENTIALS',
+  })
+  @ApiResponse({
+    status: 422,
+    description: 'Invalid password fields, PASSWORD_MISMATCH, or WEAK_PASSWORD',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    operationId: 'changeCurrentUserPassword',
+    summary: 'Change password',
+  })
+  @ApiResponse({
+    status: 204,
+    description: 'Password changed; all refresh tokens revoked',
+  })
   async changePassword(
     @CurrentUser() user: AuthenticatedUser,
     @Body() request: ChangePasswordRequestDto,

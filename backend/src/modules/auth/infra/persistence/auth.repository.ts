@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { IAuthRepository } from '../../domain/repositories/auth.repository.interface';
+import { RefreshToken } from '../../domain/entities/refresh-token';
+import { RefreshTokenMapper } from '../mappers/refresh-token.mapper';
 import { RefreshTokenEntity } from './refresh-token.entity';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 
@@ -12,8 +14,9 @@ export class AuthRepository implements IAuthRepository {
     private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
   ) {}
 
-  async saveRefreshToken(token: RefreshTokenEntity): Promise<void> {
-    await this.refreshTokenRepository.save(token);
+  async saveRefreshToken(token: RefreshToken): Promise<void> {
+    const raw = RefreshTokenMapper.toPersistence(token);
+    await this.refreshTokenRepository.save(raw);
   }
 
   async revokeActiveRefreshTokensByUserId(userId: Uuid): Promise<void> {

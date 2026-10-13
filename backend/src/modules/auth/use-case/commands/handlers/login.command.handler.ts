@@ -9,7 +9,7 @@ import { AUTH_DI_TOKEN } from '../../../auth.di-token';
 import { IAuthRepository } from '../../../domain/repositories/auth.repository.interface';
 import { TokenService } from '../../../infra/services/token.service';
 import { UserStatus } from '../../../../users/domain/enums/user-status.enum';
-import { RefreshTokenEntity } from '../../../infra/persistence/refresh-token.entity';
+import { RefreshToken } from '../../../domain/entities/refresh-token';
 import { AccountLockedException } from '../../../domain/exceptions/account-locked.exception';
 import { InvalidCredentialsException } from '../../../domain/exceptions/invalid-credentials.exception';
 
@@ -43,20 +43,21 @@ export class LoginCommandHandler implements ICommandHandler<
       throw new AccountLockedException(user.lockReason);
     }
 
+    const { rawToken, tokenHash, expiresAt } =
+      this.tokenService.generateRefreshToken(rememberMe);
+
+    const refreshToken = RefreshToken.create({
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+      revokedAt: null,
+    });
+
+    await this.authRepository.saveRefreshToken(refreshToken);
     const accessToken = this.tokenService.generateAccessToken(
       user.id,
       user.role,
     );
-    const { rawToken, tokenHash, expiresAt } =
-      this.tokenService.generateRefreshToken(rememberMe);
-
-    const refreshTokenEntity = new RefreshTokenEntity();
-    refreshTokenEntity.userId = user.id;
-    refreshTokenEntity.tokenHash = tokenHash;
-    refreshTokenEntity.expiresAt = expiresAt;
-    refreshTokenEntity.revokedAt = null;
-
-    await this.authRepository.saveRefreshToken(refreshTokenEntity);
 
     return AuthResult.create(accessToken, rawToken, user);
   }

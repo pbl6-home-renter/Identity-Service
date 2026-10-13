@@ -1,6 +1,6 @@
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
-import { GetMeUserResult } from '../results/get-me-user.result';
+import { GetMeUserModel } from '../models/get-me-user.model';
 
 export interface IGetMeQueryRepository {
-  findByUserId(userId: Uuid): Promise<GetMeUserResult | null>;
+  findByUserId(userId: Uuid): Promise<GetMeUserModel | null>;
 }
