@@ -1,4 +1,0 @@
-export const USERS_DI_TOKEN = {
-  REPOSITORY: Symbol('USER_REPOSITORY'),
-  GET_ME_QUERY_REPOSITORY: Symbol('GET_ME_QUERY_REPOSITORY'),
-} as const;
