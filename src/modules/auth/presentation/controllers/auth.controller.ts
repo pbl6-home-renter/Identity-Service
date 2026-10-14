@@ -19,6 +19,8 @@ import { LoginCommand } from '../../use-case/commands/implements/login.command';
 import { RequestPasswordResetRequestDto } from '../request/request-password-reset.request.dto';
 import { RequestPasswordResetResponseDto } from '../response/request-password-reset.response.dto';
 import { RequestPasswordResetCommand } from '../../use-case/commands/implements/request-password-reset.command';
+import { ResetPasswordRequestDto } from '../request/reset-password.request.dto';
+import { ResetPasswordCommand } from '../../use-case/commands/implements/reset-password.command';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -83,5 +85,36 @@ export class AuthController {
   ): Promise<RequestPasswordResetResponseDto> {
     await this.commandBus.execute(RequestPasswordResetCommand.create(request));
     return RequestPasswordResetResponseDto.create();
+  }
+
+  @Post('password-resets')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Reset password using a single-use token' })
+  @ApiResponse({ status: 204, description: 'Password reset successfully' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid or expired password reset token',
+    schema: {
+      oneOf: [
+        {
+          type: 'object',
+          properties: {
+            statusCode: { type: 'integer', enum: [400] },
+            code: { type: 'string', enum: ['INVALID_RESET_TOKEN'] },
+          },
+        },
+        {
+          type: 'object',
+          properties: {
+            statusCode: { type: 'integer', enum: [400] },
+            code: { type: 'string', enum: ['RESET_TOKEN_EXPIRED'] },
+          },
+        },
+      ],
+    },
+  })
+  @ApiResponse({ status: 422, description: 'Validation failed' })
+  async resetPassword(@Body() request: ResetPasswordRequestDto): Promise<void> {
+    await this.commandBus.execute(ResetPasswordCommand.create(request));
   }
 }

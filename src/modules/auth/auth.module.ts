@@ -18,11 +18,13 @@ import { RolesGuard } from 'shared/guards/roles.guard';
 import { RequestPasswordResetCommandHandler } from './use-case/commands/handlers/request-password-reset.command.handler';
 import { PasswordResetTokenEntity } from './infra/persistence/password-reset-token.entity';
 import { MailService } from './infra/services/mail.service';
+import { ResetPasswordCommandHandler } from './use-case/commands/handlers/reset-password.command.handler';
 
 const commandHandlers = [
   RegisterCommandHandler,
   LoginCommandHandler,
   RequestPasswordResetCommandHandler,
+  ResetPasswordCommandHandler,
 ];
 
 @Module({

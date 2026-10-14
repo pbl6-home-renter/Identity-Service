@@ -39,7 +39,7 @@ export class TokenService {
     expiresAt: Date;
   } {
     const rawToken = randomBytes(32).toString('base64url');
-    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+    const tokenHash = this.hashPasswordResetToken(rawToken);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     return {
@@ -47,5 +47,9 @@ export class TokenService {
       tokenHash,
       expiresAt,
     };
+  }
+
+  hashPasswordResetToken(rawToken: string): string {
+    return createHash('sha256').update(rawToken).digest('hex');
   }
 }

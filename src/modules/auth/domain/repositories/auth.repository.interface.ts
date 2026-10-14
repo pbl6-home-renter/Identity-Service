@@ -9,4 +9,8 @@ export interface IAuthRepository {
     tokenHash: string,
     expiresAt: Date,
   ): Promise<void>;
+  resetPasswordWithToken(
+    tokenHash: string,
+    passwordHash: string,
+  ): Promise<void>;
 }

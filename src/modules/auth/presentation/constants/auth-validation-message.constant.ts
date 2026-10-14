@@ -18,6 +18,10 @@ export class AuthValidationMessageConstant {
   static readonly EMAIL_INVALID_LENGTH = 'EMAIL_INVALID_LENGTH';
   static readonly EMAIL_INVALID_FORMAT = 'EMAIL_INVALID_FORMAT';
 
+  static readonly RESET_TOKEN_REQUIRED = 'RESET_TOKEN_REQUIRED';
+  static readonly RESET_TOKEN_MUST_BE_STRING = 'RESET_TOKEN_MUST_BE_STRING';
+  static readonly RESET_TOKEN_NOT_EMPTY = 'RESET_TOKEN_NOT_EMPTY';
+
   static readonly PHONE_REQUIRED = 'PHONE_REQUIRED';
   static readonly PHONE_MUST_BE_STRING = 'PHONE_MUST_BE_STRING';
   static readonly PHONE_NOT_EMPTY = 'PHONE_NOT_EMPTY';
@@ -56,6 +60,12 @@ export class AuthValidationMessageConstant {
     NOT_EMPTY: AuthValidationMessageConstant.EMAIL_NOT_EMPTY,
     INVALID_LENGTH: AuthValidationMessageConstant.EMAIL_INVALID_LENGTH,
     INVALID_FORMAT: AuthValidationMessageConstant.EMAIL_INVALID_FORMAT,
+  } as const;
+
+  static readonly RESET_TOKEN = {
+    REQUIRED: AuthValidationMessageConstant.RESET_TOKEN_REQUIRED,
+    MUST_BE_STRING: AuthValidationMessageConstant.RESET_TOKEN_MUST_BE_STRING,
+    NOT_EMPTY: AuthValidationMessageConstant.RESET_TOKEN_NOT_EMPTY,
   } as const;
 
   static readonly PHONE = {
