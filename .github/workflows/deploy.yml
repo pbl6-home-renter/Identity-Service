@@ -40,7 +40,7 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/rentify-backend:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/identity-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
