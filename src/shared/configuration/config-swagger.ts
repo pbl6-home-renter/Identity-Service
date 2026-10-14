@@ -17,7 +17,7 @@ export function configureSwagger(
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('swagger', app, document, {
+    SwaggerModule.setup('identity-service/swagger', app, document, {
       swaggerOptions: {
         persistAuthorization: true,
       },

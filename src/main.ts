@@ -66,7 +66,7 @@ async function bootstrap() {
   const appUrl = await app.getUrl();
 
   Logger.log(`Application running on: ${appUrl}`);
-  Logger.log(`Swagger documentation: ${appUrl}/swagger`);
+  Logger.log(`Swagger documentation: ${appUrl}/identity-service/swagger`);
 
   return app;
 }
