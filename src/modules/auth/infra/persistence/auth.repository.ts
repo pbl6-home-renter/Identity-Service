@@ -6,12 +6,15 @@ import { RefreshToken } from '../../domain/entities/refresh-token';
 import { RefreshTokenMapper } from '../mappers/refresh-token.mapper';
 import { RefreshTokenEntity } from './refresh-token.entity';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
+import { PasswordResetTokenEntity } from './password-reset-token.entity';
 
 @Injectable()
 export class AuthRepository implements IAuthRepository {
   constructor(
     @InjectRepository(RefreshTokenEntity)
     private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
+    @InjectRepository(PasswordResetTokenEntity)
+    private readonly passwordResetTokenRepository: Repository<PasswordResetTokenEntity>,
   ) {}
 
   async saveRefreshToken(token: RefreshToken): Promise<void> {
@@ -28,5 +31,23 @@ export class AuthRepository implements IAuthRepository {
       .andWhere('revoked_at IS NULL')
       .andWhere('expires_at > NOW()')
       .execute();
+  }
+
+  async savePasswordResetToken(
+    userId: Uuid,
+    tokenHash: string,
+    expiresAt: Date,
+  ): Promise<void> {
+    await this.passwordResetTokenRepository.manager.transaction(
+      async (manager) => {
+        await manager.delete(PasswordResetTokenEntity, { userId });
+        const token = manager.create(PasswordResetTokenEntity, {
+          userId,
+          tokenHash,
+          expiresAt,
+        });
+        await manager.save(token);
+      },
+    );
   }
 }

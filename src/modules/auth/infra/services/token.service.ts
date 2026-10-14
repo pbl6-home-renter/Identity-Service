@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { createHash, randomUUID } from 'crypto';
+import { createHash, randomBytes, randomUUID } from 'crypto';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { UserRole } from '../../../users/domain/enums/user-role.enum';
 import { JwtPayload } from 'shared/interfaces/jwt-payload.interface';
@@ -25,6 +25,22 @@ export class TokenService {
     const expirationDays = rememberMe ? 7 : 1;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + expirationDays);
+
+    return {
+      rawToken,
+      tokenHash,
+      expiresAt,
+    };
+  }
+
+  generatePasswordResetToken(): {
+    rawToken: string;
+    tokenHash: string;
+    expiresAt: Date;
+  } {
+    const rawToken = randomBytes(32).toString('base64url');
+    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     return {
       rawToken,

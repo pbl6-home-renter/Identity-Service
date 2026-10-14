@@ -41,6 +41,35 @@ export class ApiConfigService {
     return this.getString('LOG_LEVEL', 'debug');
   }
 
+  get mailHost(): string | undefined {
+    return this.getOptionalString('MAIL_HOST');
+  }
+
+  get mailPort(): number {
+    return this.getNumber('MAIL_PORT', 465);
+  }
+
+  get mailUser(): string | undefined {
+    return this.getOptionalString('MAIL_USER');
+  }
+
+  get mailPassword(): string | undefined {
+    return this.getOptionalString('MAIL_PASS');
+  }
+
+  get mailFrom(): string | undefined {
+    return this.getOptionalString('MAIL_FROM');
+  }
+
+  get passwordResetUrl(): string {
+    return (
+      this.getOptionalString('PASSWORD_RESET_URL') ??
+      (this.isDevelopment
+        ? 'http://localhost:3000/reset-password'
+        : this.getString('PASSWORD_RESET_URL'))
+    );
+  }
+
   get jwtSecret(): string {
     return this.getString('JWT_SECRET');
   }
@@ -66,6 +95,11 @@ export class ApiConfigService {
   private getString(key: string, defaultValue?: string): string {
     const value = this.get(key, defaultValue);
     return value.replaceAll('\\n', '\n');
+  }
+
+  private getOptionalString(key: string): string | undefined {
+    const value = this.configService.get<string>(key)?.trim();
+    return value || undefined;
   }
 
   private get(key: string, defaultValue?: string): string {

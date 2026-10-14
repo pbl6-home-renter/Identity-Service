@@ -16,6 +16,9 @@ import { AuthResponseDto } from '../response/auth.response.dto';
 import { AuthResponseCodeConstant } from '../constants/auth-response-code.constant';
 import { RegisterCommand } from '../../use-case/commands/implements/register.command';
 import { LoginCommand } from '../../use-case/commands/implements/login.command';
+import { RequestPasswordResetRequestDto } from '../request/request-password-reset.request.dto';
+import { RequestPasswordResetResponseDto } from '../response/request-password-reset.response.dto';
+import { RequestPasswordResetCommand } from '../../use-case/commands/implements/request-password-reset.command';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -62,5 +65,23 @@ export class AuthController {
     return AuthResponseDto.fromResult(
       await this.commandBus.execute(LoginCommand.create(request)),
     );
+  }
+
+  @Post('password-reset-requests')
+  @HttpCode(HttpStatus.OK)
+  @ResponseCode(AuthResponseCodeConstant.PASSWORD_RESET_REQUESTED)
+  @ApiOperation({ summary: 'Request a password reset link' })
+  @ApiSuccessResponse({
+    status: 200,
+    code: AuthResponseCodeConstant.PASSWORD_RESET_REQUESTED,
+    dataDto: RequestPasswordResetResponseDto,
+    description: 'The password reset request was accepted',
+  })
+  @ApiResponse({ status: 422, description: 'Validation failed' })
+  async requestPasswordReset(
+    @Body() request: RequestPasswordResetRequestDto,
+  ): Promise<RequestPasswordResetResponseDto> {
+    await this.commandBus.execute(RequestPasswordResetCommand.create(request));
+    return RequestPasswordResetResponseDto.create();
   }
 }
