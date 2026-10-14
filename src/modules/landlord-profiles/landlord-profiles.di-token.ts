@@ -1,0 +1,3 @@
+export const LANDLORD_PROFILES_DI_TOKEN = {
+  REPOSITORY: Symbol('LANDLORD_PROFILES_REPOSITORY'),
+} as const;
