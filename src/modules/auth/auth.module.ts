@@ -15,8 +15,15 @@ import { ApiConfigService } from 'shared/services/api-config.service';
 import { JwtStrategy } from 'shared/strategies/jwt.strategy';
 import { JwtAuthGuard } from 'shared/guards/jwt-auth.guard';
 import { RolesGuard } from 'shared/guards/roles.guard';
+import { RequestPasswordResetCommandHandler } from './use-case/commands/handlers/request-password-reset.command.handler';
+import { PasswordResetTokenEntity } from './infra/persistence/password-reset-token.entity';
+import { PasswordResetTokenRepository } from './infra/persistence/password-reset-token.repository';
 
-const commandHandlers = [RegisterCommandHandler, LoginCommandHandler];
+const commandHandlers = [
+  RegisterCommandHandler,
+  LoginCommandHandler,
+  RequestPasswordResetCommandHandler,
+];
 
 @Module({
   imports: [
@@ -29,7 +36,7 @@ const commandHandlers = [RegisterCommandHandler, LoginCommandHandler];
         signOptions: { expiresIn: '15m' },
       }),
     }),
-    TypeOrmModule.forFeature([RefreshTokenEntity]),
+    TypeOrmModule.forFeature([RefreshTokenEntity, PasswordResetTokenEntity]),
     UsersModule,
   ],
   controllers: [AuthController],
@@ -41,6 +48,10 @@ const commandHandlers = [RegisterCommandHandler, LoginCommandHandler];
     {
       provide: AUTH_DI_TOKEN.REPOSITORY,
       useClass: AuthRepository,
+    },
+    {
+      provide: AUTH_DI_TOKEN.PASSWORD_RESET_TOKEN_REPOSITORY,
+      useClass: PasswordResetTokenRepository,
     },
     ...commandHandlers,
   ],

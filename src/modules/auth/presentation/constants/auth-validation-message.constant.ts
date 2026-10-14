@@ -17,6 +17,7 @@ export class AuthValidationMessageConstant {
   static readonly EMAIL_NOT_EMPTY = 'EMAIL_NOT_EMPTY';
   static readonly EMAIL_INVALID_LENGTH = 'EMAIL_INVALID_LENGTH';
   static readonly EMAIL_INVALID_FORMAT = 'EMAIL_INVALID_FORMAT';
+  static readonly EMAIL_INVALID = 'INVALID_EMAIL';
 
   static readonly PHONE_REQUIRED = 'PHONE_REQUIRED';
   static readonly PHONE_MUST_BE_STRING = 'PHONE_MUST_BE_STRING';
@@ -56,6 +57,7 @@ export class AuthValidationMessageConstant {
     NOT_EMPTY: AuthValidationMessageConstant.EMAIL_NOT_EMPTY,
     INVALID_LENGTH: AuthValidationMessageConstant.EMAIL_INVALID_LENGTH,
     INVALID_FORMAT: AuthValidationMessageConstant.EMAIL_INVALID_FORMAT,
+    INVALID: AuthValidationMessageConstant.EMAIL_INVALID,
   } as const;
 
   static readonly PHONE = {
