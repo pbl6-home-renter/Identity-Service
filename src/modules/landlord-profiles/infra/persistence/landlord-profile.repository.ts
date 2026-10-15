@@ -25,4 +25,11 @@ export class LandlordProfileRepository implements ILandlordProfileRepository {
   async save(profile: LandlordProfile): Promise<void> {
     await this.repository.save(LandlordProfileMapper.toPersistence(profile));
   }
+
+  async softDeleteByUserId(userId: Uuid): Promise<void> {
+    await this.repository.update(
+      { userId, isDeleted: false },
+      { isDeleted: true },
+    );
+  }
 }

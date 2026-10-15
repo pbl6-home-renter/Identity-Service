@@ -9,6 +9,17 @@ export class UserValidationMessageConstant {
   static readonly PHONE_NOT_EMPTY = 'PHONE_NOT_EMPTY';
   static readonly PHONE_INVALID_FORMAT = 'PHONE_INVALID_FORMAT';
 
+  static readonly EMAIL_REQUIRED = 'EMAIL_REQUIRED';
+  static readonly EMAIL_MUST_BE_STRING = 'EMAIL_MUST_BE_STRING';
+  static readonly EMAIL_NOT_EMPTY = 'EMAIL_NOT_EMPTY';
+  static readonly EMAIL_INVALID_FORMAT = 'EMAIL_INVALID_FORMAT';
+  static readonly EMAIL_INVALID_LENGTH = 'EMAIL_INVALID_LENGTH';
+
+  static readonly LOCK_REASON_REQUIRED = 'LOCK_REASON_REQUIRED';
+  static readonly LOCK_REASON_MUST_BE_STRING = 'LOCK_REASON_MUST_BE_STRING';
+  static readonly LOCK_REASON_NOT_EMPTY = 'LOCK_REASON_NOT_EMPTY';
+  static readonly LOCK_REASON_INVALID_LENGTH = 'LOCK_REASON_INVALID_LENGTH';
+
   static readonly PAYOUT_ACCOUNT_MUST_BE_OBJECT =
     'PAYOUT_ACCOUNT_MUST_BE_OBJECT';
 
@@ -45,7 +56,7 @@ export class UserValidationMessageConstant {
     'CONFIRM_PASSWORD_MUST_BE_STRING';
   static readonly CONFIRM_PASSWORD_NOT_EMPTY = 'CONFIRM_PASSWORD_NOT_EMPTY';
 
-  static readonly PASSWORD_MISMATCH = 'PASSWORD_MISMATCH';
+  static readonly PASSWORD_MISMATCH = 'USER_CHANGE_PASSWORD_MISMATCH';
 
   static readonly NAME = {
     REQUIRED: UserValidationMessageConstant.NAME_REQUIRED,
@@ -59,6 +70,21 @@ export class UserValidationMessageConstant {
     MUST_BE_STRING: UserValidationMessageConstant.PHONE_MUST_BE_STRING,
     NOT_EMPTY: UserValidationMessageConstant.PHONE_NOT_EMPTY,
     INVALID_FORMAT: UserValidationMessageConstant.PHONE_INVALID_FORMAT,
+  } as const;
+
+  static readonly EMAIL = {
+    REQUIRED: UserValidationMessageConstant.EMAIL_REQUIRED,
+    MUST_BE_STRING: UserValidationMessageConstant.EMAIL_MUST_BE_STRING,
+    NOT_EMPTY: UserValidationMessageConstant.EMAIL_NOT_EMPTY,
+    INVALID_FORMAT: UserValidationMessageConstant.EMAIL_INVALID_FORMAT,
+    INVALID_LENGTH: UserValidationMessageConstant.EMAIL_INVALID_LENGTH,
+  } as const;
+
+  static readonly LOCK_REASON = {
+    REQUIRED: UserValidationMessageConstant.LOCK_REASON_REQUIRED,
+    MUST_BE_STRING: UserValidationMessageConstant.LOCK_REASON_MUST_BE_STRING,
+    NOT_EMPTY: UserValidationMessageConstant.LOCK_REASON_NOT_EMPTY,
+    INVALID_LENGTH: UserValidationMessageConstant.LOCK_REASON_INVALID_LENGTH,
   } as const;
 
   static readonly PAYOUT_ACCOUNT = {

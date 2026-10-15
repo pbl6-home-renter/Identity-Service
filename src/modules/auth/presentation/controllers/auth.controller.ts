@@ -10,17 +10,17 @@ import { CommandBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ResponseCode } from 'shared/decorators/response-code.decorator';
 import { ApiSuccessResponse } from 'shared/decorators/api-success-response.decorator';
-import { RegisterRequestDto } from '../request/register.request.dto';
-import { LoginRequestDto } from '../request/login.request.dto';
+import { AuthRegisterRequestDto } from '../request/auth-register.request.dto';
+import { AuthLoginRequestDto } from '../request/auth-login.request.dto';
 import { AuthResponseDto } from '../response/auth.response.dto';
 import { AuthResponseCodeConstant } from '../constants/auth-response-code.constant';
-import { RegisterCommand } from '../../use-case/commands/implements/register.command';
-import { LoginCommand } from '../../use-case/commands/implements/login.command';
+import { AuthRegisterCommand } from '../../use-case/commands/implements/auth-register.command';
+import { AuthLoginCommand } from '../../use-case/commands/implements/auth-login.command';
 import { RequestPasswordResetRequestDto } from '../request/request-password-reset.request.dto';
 import { RequestPasswordResetResponseDto } from '../response/request-password-reset.response.dto';
 import { RequestPasswordResetCommand } from '../../use-case/commands/implements/request-password-reset.command';
-import { UserNotFoundException } from '../../../users/domain/exceptions/user-not-found.exception';
-import { AccountLockedException } from '../../domain/exceptions/account-locked.exception';
+import { UserNotFoundException } from 'modules/users/domain/exceptions/user-not-found.exception';
+import { AuthLoginAccountLockedException } from '../../domain/exceptions/auth-login-account-locked.exception';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -41,13 +41,13 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Email or phone already exists' })
   @ApiResponse({
     status: 422,
-    description: 'Validation failed or role not allowed',
+    description: 'AUTH_REGISTER_ROLE_NOT_ALLOWED or VALIDATION_FAILED',
   })
   async register(
-    @Body() request: RegisterRequestDto,
+    @Body() request: AuthRegisterRequestDto,
   ): Promise<AuthResponseDto> {
     return AuthResponseDto.fromResult(
-      await this.commandBus.execute(RegisterCommand.create(request)),
+      await this.commandBus.execute(AuthRegisterCommand.create(request)),
     );
   }
 
@@ -61,11 +61,14 @@ export class AuthController {
     dataDto: AuthResponseDto,
     description: 'Logged in successfully',
   })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({
+    status: 401,
+    description: 'AUTH_LOGIN_INVALID_CREDENTIALS',
+  })
   @ApiResponse({ status: 403, description: 'Account locked' })
-  async login(@Body() request: LoginRequestDto): Promise<AuthResponseDto> {
+  async login(@Body() request: AuthLoginRequestDto): Promise<AuthResponseDto> {
     return AuthResponseDto.fromResult(
-      await this.commandBus.execute(LoginCommand.create(request)),
+      await this.commandBus.execute(AuthLoginCommand.create(request)),
     );
   }
 
@@ -91,7 +94,7 @@ export class AuthController {
     } catch (error) {
       if (
         error instanceof UserNotFoundException ||
-        error instanceof AccountLockedException
+        error instanceof AuthLoginAccountLockedException
       ) {
         return RequestPasswordResetResponseDto.create(true);
       }

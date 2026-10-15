@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { createHash, randomBytes, randomUUID } from 'crypto';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
-import { UserRole } from '../../../users/domain/enums/user-role.enum';
+import { UserRole } from 'shared/domain/enums/user-role.enum';
 import { JwtPayload } from 'shared/interfaces/jwt-payload.interface';
 import { PasswordResetTokenGenerated } from '../../domain/models/password-reset-token-generated.model';
 

@@ -8,8 +8,8 @@ import { RefreshTokenEntity } from './infra/persistence/refresh-token.entity';
 import { AuthRepository } from './infra/persistence/auth.repository';
 import { AUTH_DI_TOKEN } from './auth.di-token';
 import { TokenService } from './infra/services/token.service';
-import { RegisterCommandHandler } from './use-case/commands/handlers/register.command.handler';
-import { LoginCommandHandler } from './use-case/commands/handlers/login.command.handler';
+import { AuthRegisterCommandHandler } from './use-case/commands/handlers/auth-register.command.handler';
+import { AuthLoginCommandHandler } from './use-case/commands/handlers/auth-login.command.handler';
 import { AuthController } from './presentation/controllers/auth.controller';
 import { ApiConfigService } from 'shared/services/api-config.service';
 import { JwtStrategy } from 'shared/strategies/jwt.strategy';
@@ -19,11 +19,14 @@ import { RequestPasswordResetCommandHandler } from './use-case/commands/handlers
 import { PasswordResetTokenEntity } from './infra/persistence/password-reset-token.entity';
 import { PasswordResetTokenRepository } from './infra/persistence/password-reset-token.repository';
 
+import { AuthRevokeTokensOnUserEventsHandler } from './use-case/events/handlers/auth-revoke-tokens-on-user-events.event.handler';
+
 const commandHandlers = [
-  RegisterCommandHandler,
-  LoginCommandHandler,
+  AuthRegisterCommandHandler,
+  AuthLoginCommandHandler,
   RequestPasswordResetCommandHandler,
 ];
+const eventHandlers = [AuthRevokeTokensOnUserEventsHandler];
 
 @Module({
   imports: [
@@ -54,6 +57,7 @@ const commandHandlers = [
       useClass: PasswordResetTokenRepository,
     },
     ...commandHandlers,
+    ...eventHandlers,
   ],
   exports: [AUTH_DI_TOKEN.REPOSITORY, TokenService, JwtAuthGuard, RolesGuard],
 })
