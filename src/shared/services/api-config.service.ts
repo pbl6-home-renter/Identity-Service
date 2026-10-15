@@ -21,18 +21,6 @@ export class ApiConfigService {
     return this.getNumber('PORT', 3001);
   }
 
-  get nodeEnv(): string {
-    return this.getString('NODE_ENV', 'dev');
-  }
-
-  get isDevelopment(): boolean {
-    return this.nodeEnv === 'dev' || this.nodeEnv === 'development';
-  }
-
-  get isProduction(): boolean {
-    return this.nodeEnv === 'prod' || this.nodeEnv === 'production';
-  }
-
   get enableSwagger(): boolean {
     return this.getBoolean('ENABLE_DOCUMENTATION', true);
   }
