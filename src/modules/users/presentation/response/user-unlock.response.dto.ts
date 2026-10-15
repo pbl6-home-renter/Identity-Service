@@ -13,8 +13,8 @@ export class UserUnlockResponseDto {
   @ApiProperty({ enum: UserStatus, example: UserStatus.ACTIVE })
   status: UserStatus;
 
-  @ApiProperty({ example: null, nullable: true })
-  lockedAt: null;
+  @ApiProperty({ type: Date, example: null, nullable: true })
+  lockedAt: Date | null;
 
   static fromDomain(user: User): UserUnlockResponseDto {
     const dto = new UserUnlockResponseDto();
