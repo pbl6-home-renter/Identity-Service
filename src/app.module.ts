@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { CqrsModule } from '@nestjs/cqrs';
 import { LoggingExceptionFilter } from './filter/error-handling-exception-filter';
 import { ResponseTransformInterceptor } from './interceptor/response-transform.interceptor';
 import { SharedModule } from './shared/shared.module';
@@ -8,7 +9,14 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
-  imports: [SharedModule, UsersModule, AuthModule, HealthModule],
+  imports: [
+    CqrsModule.forRoot(),
+    SharedModule,
+    UsersModule,
+    AuthModule,
+    HealthModule,
+  ],
+
   providers: [
     {
       provide: APP_FILTER,

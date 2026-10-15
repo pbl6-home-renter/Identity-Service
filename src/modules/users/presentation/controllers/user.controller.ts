@@ -22,15 +22,15 @@ import { CurrentUser } from 'shared/decorators/current-user.decorator';
 import { ResponseCode } from 'shared/decorators/response-code.decorator';
 import { ApiSuccessResponse } from 'shared/decorators/api-success-response.decorator';
 import { Roles } from 'shared/decorators/roles.decorator';
-import { UserRole } from '../../domain/enums/user-role.enum';
-import { ChangePasswordCommand } from '../../use-case/commands/implements/change-password.command';
-import { UpdateMeCommand } from '../../use-case/commands/implements/update-me.command';
-import { GetMeQuery } from '../../use-case/queries/implements/get-me.query';
+import { UserRole } from 'shared/domain/enums/user-role.enum';
+import { UserChangePasswordCommand } from '../../use-case/commands/implements/user-change-password.command';
+import { UserUpdateMeCommand } from '../../use-case/commands/implements/user-update-me.command';
+import { UserGetMeQuery } from '../../use-case/queries/implements/user-get-me.query';
 import { UserResponseCodeConstant } from '../constants/user-response-code.constant';
-import { ChangePasswordRequestDto } from '../request/change-password.request.dto';
-import { UpdateMeRequestDto } from '../request/update-me.request.dto';
-import { UserProfileResponseDto } from '../response/user-profile.response.dto';
-import { CurrentUserUpdateResponseDto } from '../response/current-user-update.response.dto';
+import { UserChangePasswordRequestDto } from '../request/user-change-password.request.dto';
+import { UserUpdateMeRequestDto } from '../request/user-update-me.request.dto';
+import { UserGetMeResponseDto } from '../response/user-get-me.response.dto';
+import { UserUpdateMeResponseDto } from '../response/user-update-me.response.dto';
 @ApiTags('User')
 @ApiBearerAuth()
 @Controller()
@@ -44,52 +44,58 @@ export class UserController {
 
   @Get('me')
   @HttpCode(HttpStatus.OK)
-  @ResponseCode(UserResponseCodeConstant.USER_CURRENT_FETCHED)
+  @ResponseCode(UserResponseCodeConstant.CURRENT_USER_PROFILE_FETCHED)
   @ApiOperation({ operationId: 'getCurrentUser', summary: 'Get current user' })
   @ApiSuccessResponse({
     status: 200,
-    code: UserResponseCodeConstant.USER_CURRENT_FETCHED,
-    dataDto: UserProfileResponseDto,
+    code: UserResponseCodeConstant.CURRENT_USER_PROFILE_FETCHED,
+    dataDto: UserGetMeResponseDto,
   })
   async getMe(
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<UserProfileResponseDto> {
-    return UserProfileResponseDto.fromResult(
-      await this.queryBus.execute(GetMeQuery.create(user.id)),
+  ): Promise<UserGetMeResponseDto> {
+    return UserGetMeResponseDto.fromResult(
+      await this.queryBus.execute(UserGetMeQuery.create(user.id)),
     );
   }
 
   @Patch('me')
   @ApiResponse({ status: 409, description: 'DUPLICATE_PHONE' })
-  @ApiResponse({ status: 422, description: 'VALIDATION_FAILED' })
+  @ApiResponse({
+    status: 422,
+    description: 'USER_UPDATE_PAYOUT_NOT_ALLOWED or VALIDATION_FAILED',
+  })
   @HttpCode(HttpStatus.OK)
-  @ResponseCode(UserResponseCodeConstant.USER_CURRENT_UPDATED)
+  @ResponseCode(UserResponseCodeConstant.CURRENT_USER_PROFILE_UPDATED)
   @ApiOperation({
     operationId: 'updateCurrentUser',
     summary: 'Update current user',
   })
   @ApiSuccessResponse({
     status: 200,
-    code: UserResponseCodeConstant.USER_CURRENT_UPDATED,
-    dataDto: CurrentUserUpdateResponseDto,
+    code: UserResponseCodeConstant.CURRENT_USER_PROFILE_UPDATED,
+    dataDto: UserUpdateMeResponseDto,
   })
   async updateMe(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() request: UpdateMeRequestDto,
-  ): Promise<CurrentUserUpdateResponseDto> {
-    return CurrentUserUpdateResponseDto.fromResult(
-      await this.commandBus.execute(UpdateMeCommand.create(user.id, request)),
+    @Body() request: UserUpdateMeRequestDto,
+  ): Promise<UserUpdateMeResponseDto> {
+    return UserUpdateMeResponseDto.fromResult(
+      await this.commandBus.execute(
+        UserUpdateMeCommand.create(user.id, request),
+      ),
     );
   }
 
   @Put('me/password')
   @ApiResponse({
     status: 401,
-    description: 'UNAUTHORIZED or INVALID_CREDENTIALS',
+    description: 'UNAUTHORIZED or USER_CHANGE_PASSWORD_INVALID_CURRENT',
   })
   @ApiResponse({
     status: 422,
-    description: 'Invalid password fields, PASSWORD_MISMATCH, or WEAK_PASSWORD',
+    description:
+      'Invalid password fields, USER_CHANGE_PASSWORD_MISMATCH, or WEAK_PASSWORD',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
@@ -102,10 +108,10 @@ export class UserController {
   })
   async changePassword(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() request: ChangePasswordRequestDto,
+    @Body() request: UserChangePasswordRequestDto,
   ): Promise<void> {
     await this.commandBus.execute(
-      ChangePasswordCommand.create(user.id, request),
+      UserChangePasswordCommand.create(user.id, request),
     );
   }
 }

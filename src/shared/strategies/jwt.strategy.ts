@@ -4,7 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { isValidUuid } from 'utils/uuid.utils';
 import { ApiConfigService } from 'shared/services/api-config.service';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
-import { UserRole } from 'modules/users/domain/enums/user-role.enum';
+import { UserRole } from 'shared/domain/enums/user-role.enum';
 import { AuthenticatedUser } from 'shared/interfaces/authenticated-user.interface';
 import { JwtPayload } from 'shared/interfaces/jwt-payload.interface';
 
