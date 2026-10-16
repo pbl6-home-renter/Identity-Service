@@ -27,10 +27,14 @@ export class UserGetDetailAdminResponseDto {
   @ApiProperty({ enum: UserStatus, example: UserStatus.ACTIVE })
   status: UserStatus;
 
-  @ApiProperty({ example: 'Spam listing', nullable: true })
+  @ApiProperty({ type: String, example: 'Spam listing', nullable: true })
   lockReason: string | null;
 
-  @ApiProperty({ example: '2026-09-23T11:55:00.000Z', nullable: true })
+  @ApiProperty({
+    type: Date,
+    example: '2026-09-23T11:55:00.000Z',
+    nullable: true,
+  })
   lockedAt: Date | null;
 
   @ApiProperty({ type: PayoutAccountResponseDto, nullable: true })

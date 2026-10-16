@@ -1,9 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   IsIn,
   IsInt,
-  IsObject,
   IsOptional,
   IsString,
   Matches,
@@ -13,34 +12,26 @@ import {
 import { IOffsetPaginationQueryRequestDto } from '../../domain/pagination/i-offset-pagination.query.request.dto';
 import { SortOrder } from '../../domain/value-objects/sort-order.vo';
 
-export class OffsetPaginationQueryRequestDto<
-  TFilter = Record<string, unknown>,
-> implements IOffsetPaginationQueryRequestDto<TFilter> {
+export class OffsetPaginationQueryRequestDto implements IOffsetPaginationQueryRequestDto {
   @ApiPropertyOptional({
-    description: 'Số nguyên dương, bắt đầu từ 1 (alias: page)',
+    description: 'Số nguyên dương, bắt đầu từ 1',
     default: 1,
     minimum: 1,
   })
   @IsOptional()
-  @Transform(({ value, obj }) => {
-    const raw = value ?? obj?.page;
-    return raw !== undefined ? Number(raw) : 1;
-  })
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   pageNo: number = 1;
 
   @ApiPropertyOptional({
-    description: 'Số nguyên dương, tối đa 100 (alias: limit)',
+    description: 'Số nguyên dương, tối đa 100',
     default: 20,
     minimum: 1,
     maximum: 100,
   })
   @IsOptional()
-  @Transform(({ value, obj }) => {
-    const raw = value ?? obj?.limit;
-    return raw !== undefined ? Number(raw) : 20;
-  })
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
@@ -68,13 +59,4 @@ export class OffsetPaginationQueryRequestDto<
     message: 'order must be either asc or desc',
   })
   order?: SortOrder = 'desc';
-
-  @ApiPropertyOptional({
-    description:
-      'Object có field được endpoint cho phép, serialized theo OpenAPI deepObject (ví dụ: filter[status]=available)',
-    type: Object,
-  })
-  @IsOptional()
-  @IsObject({ message: 'filter must be an object' })
-  filter?: TFilter;
 }

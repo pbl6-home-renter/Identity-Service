@@ -25,6 +25,7 @@
     "migration:run:prod": "typeorm migration:run -d dist/shared/infra/typeorm/data-source.js",
     "migration:revert": "npm run typeorm -- migration:revert",
     "schema:drop": "npm run typeorm -- schema:drop",
+    "seed:run": "typeorm-extension seed:run -d src/shared/infra/typeorm/data-source.ts",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -56,7 +57,8 @@
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "typeorm": "^1.1.1"
+    "typeorm": "^1.1.1",
+    "typeorm-extension": "^4.3.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",
