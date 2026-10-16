@@ -33,6 +33,25 @@ export class ApiConfigService {
     return this.getString('JWT_SECRET');
   }
 
+  getAdminUser(): {
+    id: string;
+    email: string;
+    password: string;
+    name: string;
+    phone: string;
+  } {
+    return {
+      id: this.getString(
+        'DEFAULT_ADMIN_ID',
+        '00000000-0000-4000-8000-000000000001',
+      ),
+      email: this.getString('DEFAULT_ADMIN_EMAIL', 'admin@example.com'),
+      password: this.getString('DEFAULT_ADMIN_PASSWORD', 'AdminPassword123!'),
+      name: this.getString('DEFAULT_ADMIN_NAME', 'System Administrator'),
+      phone: this.getString('DEFAULT_ADMIN_PHONE', '0900000000'),
+    };
+  }
+
   private getNumber(key: string, defaultValue?: number): number {
     const value = this.get(key, defaultValue?.toString());
     const parsed = Number(value);

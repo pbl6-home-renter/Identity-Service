@@ -22,9 +22,9 @@ export class UserListAdminQuery implements IQuery {
       request.pageSize,
       request.sort,
       request.order,
-      request.filter?.role,
-      request.filter?.status,
-      request.filter?.q,
+      request.role,
+      request.status,
+      request.q,
     );
   }
 }

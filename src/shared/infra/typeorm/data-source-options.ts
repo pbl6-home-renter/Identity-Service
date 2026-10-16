@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { DataSourceOptions } from 'typeorm';
+import type { SeederOptions } from 'typeorm-extension';
 import { SnakeNamingStrategy } from '../../configuration/snake-naming.strategy';
 
 const envFilePaths = [
@@ -71,7 +72,7 @@ const connectionOptions = databaseUrl
       database: process.env.DB_DATABASE || 'identity_db',
     };
 
-export function createDataSourceOptions(): DataSourceOptions {
+export function createDataSourceOptions(): DataSourceOptions & SeederOptions {
   return {
     type: 'postgres',
     ...connectionOptions,
@@ -84,5 +85,6 @@ export function createDataSourceOptions(): DataSourceOptions {
         '/../../../modules/**/infra/persistence/*{.typeorm-entity,.entity}{.ts,.js}',
     ],
     migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
+    seeds: [__dirname + '/seeds/**/*{.ts,.js}'],
   };
 }

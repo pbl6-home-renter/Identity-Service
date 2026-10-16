@@ -1,14 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsEnum, IsIn, IsOptional, IsString } from 'class-validator';
 import { OffsetPaginationQueryRequestDto } from 'shared/presentation/pagination/offset-pagination.request.dto';
+import { UserRole } from 'shared/domain/enums/user-role.enum';
+import { UserStatus } from 'shared/domain/enums/user-status.enum';
 import {
   USER_SORT_FIELDS,
   UserSortField,
 } from '../constants/user-sort-field.constant';
-import { UserFilterDto } from './user-filter.dto';
 
-export class UserListAdminQueryRequestDto extends OffsetPaginationQueryRequestDto<UserFilterDto> {
+export class UserListAdminQueryRequestDto extends OffsetPaginationQueryRequestDto {
   @ApiPropertyOptional({
     description: 'Trường sắp xếp được phép',
     enum: USER_SORT_FIELDS,
@@ -22,9 +22,27 @@ export class UserListAdminQueryRequestDto extends OffsetPaginationQueryRequestDt
   })
   override sort?: UserSortField = 'createdAt';
 
-  @ApiPropertyOptional({ type: UserFilterDto })
+  @ApiPropertyOptional({
+    description: 'Lọc theo vai trò',
+    enum: UserRole,
+  })
   @IsOptional()
-  @ValidateNested()
-  @Type(() => UserFilterDto)
-  declare filter?: UserFilterDto;
+  @IsEnum(UserRole)
+  role?: UserRole;
+
+  @ApiPropertyOptional({
+    description: 'Lọc theo trạng thái',
+    enum: UserStatus,
+  })
+  @IsOptional()
+  @IsEnum(UserStatus)
+  status?: UserStatus;
+
+  @ApiPropertyOptional({
+    description: 'Tìm kiếm theo tên, email hoặc số điện thoại',
+    example: 'an',
+  })
+  @IsOptional()
+  @IsString()
+  q?: string;
 }
