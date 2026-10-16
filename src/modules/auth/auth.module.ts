@@ -18,6 +18,7 @@ import { RolesGuard } from 'shared/guards/roles.guard';
 import { RequestPasswordResetCommandHandler } from './use-case/commands/handlers/request-password-reset.command.handler';
 import { PasswordResetTokenEntity } from './infra/persistence/password-reset-token.entity';
 import { PasswordResetTokenRepository } from './infra/persistence/password-reset-token.repository';
+import { ResetPasswordCommandHandler } from './use-case/commands/handlers/reset-password.command.handler';
 
 import { AuthRevokeTokensOnUserEventsHandler } from './use-case/events/handlers/auth-revoke-tokens-on-user-events.event.handler';
 
@@ -25,6 +26,7 @@ const commandHandlers = [
   AuthRegisterCommandHandler,
   AuthLoginCommandHandler,
   RequestPasswordResetCommandHandler,
+  ResetPasswordCommandHandler,
 ];
 const eventHandlers = [AuthRevokeTokensOnUserEventsHandler];
 

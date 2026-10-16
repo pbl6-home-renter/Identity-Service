@@ -4,4 +4,8 @@ import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 export interface IAuthRepository {
   saveRefreshToken(token: RefreshToken): Promise<void>;
   revokeActiveRefreshTokensByUserId(userId: Uuid): Promise<void>;
+  resetPasswordWithToken(
+    tokenHash: string,
+    passwordHash: string,
+  ): Promise<void>;
 }

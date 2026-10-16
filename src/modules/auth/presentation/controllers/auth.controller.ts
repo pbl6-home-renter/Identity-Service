@@ -21,6 +21,8 @@ import { RequestPasswordResetResponseDto } from '../response/request-password-re
 import { RequestPasswordResetCommand } from '../../use-case/commands/implements/request-password-reset.command';
 import { UserNotFoundException } from 'modules/users/domain/exceptions/user-not-found.exception';
 import { AuthLoginAccountLockedException } from '../../domain/exceptions/auth-login-account-locked.exception';
+import { ResetPasswordRequestDto } from '../request/reset-password.request.dto';
+import { ResetPasswordCommand } from '../../use-case/commands/implements/reset-password.command';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -73,14 +75,14 @@ export class AuthController {
   }
 
   @Post('password-reset-requests')
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.ACCEPTED)
   @ResponseCode(AuthResponseCodeConstant.PASSWORD_RESET_REQUESTED)
   @ApiOperation({ summary: 'Request a password reset link' })
   @ApiSuccessResponse({
-    status: 200,
+    status: HttpStatus.ACCEPTED,
     code: AuthResponseCodeConstant.PASSWORD_RESET_REQUESTED,
     dataDto: RequestPasswordResetResponseDto,
-    description: 'The password reset request was accepted',
+    description: 'The password reset request was accepted for processing',
   })
   @ApiResponse({ status: 422, description: 'Validation failed' })
   async requestPasswordReset(
@@ -100,5 +102,56 @@ export class AuthController {
       }
       throw error;
     }
+  }
+
+  @Post('password-resets')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Reset password using a single-use token' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Password reset successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Malformed request body',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Password reset token has been used or has expired',
+    schema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['statusCode', 'code'],
+      properties: {
+        statusCode: { type: 'integer', enum: [409] },
+        code: { type: 'string', enum: ['TOKEN_USED', 'TOKEN_EXPIRED'] },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    description: 'Validation failed',
+    schema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['statusCode', 'code'],
+      properties: {
+        statusCode: { type: 'integer', enum: [422] },
+        code: {
+          type: 'string',
+          enum: [
+            'TOKEN_REQUIRED',
+            'INVALID_TOKEN',
+            'NEW_PASSWORD_REQUIRED',
+            'INVALID_NEW_PASSWORD',
+            'UNEXPECTED_FIELD',
+            'VALIDATION_FAILED',
+          ],
+        },
+      },
+    },
+  })
+  async resetPassword(@Body() request: ResetPasswordRequestDto): Promise<void> {
+    await this.commandBus.execute(ResetPasswordCommand.create(request));
   }
 }
