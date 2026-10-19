@@ -29,8 +29,20 @@ export class ApiConfigService {
     return this.getString('LOG_LEVEL', 'debug');
   }
 
-  get jwtSecret(): string {
-    return this.getString('JWT_SECRET');
+  get jwt(): {
+    privateKey: string;
+    publicKey: string;
+    keyId: string;
+    issuer: string;
+    audience: string;
+  } {
+    return {
+      privateKey: this.getString('JWT_PRIVATE_KEY'),
+      publicKey: this.getString('JWT_PUBLIC_KEY'),
+      keyId: this.getString('JWT_KEY_ID', 'rentify-identity-2026-01'),
+      issuer: this.getString('JWT_ISSUER', 'rentify-identity'),
+      audience: this.getString('JWT_AUDIENCE', 'rentify-api'),
+    };
   }
 
   getAdminUser(): {
