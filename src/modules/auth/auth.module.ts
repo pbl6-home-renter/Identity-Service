@@ -19,6 +19,7 @@ import { RequestPasswordResetCommandHandler } from './use-case/commands/handlers
 import { PasswordResetTokenEntity } from './infra/persistence/password-reset-token.entity';
 import { PasswordResetTokenRepository } from './infra/persistence/password-reset-token.repository';
 import { ResetPasswordCommandHandler } from './use-case/commands/handlers/reset-password.command.handler';
+import { JwksController } from './presentation/controllers/jwks.controller';
 
 import { AuthRevokeTokensOnUserEventsHandler } from './use-case/events/handlers/auth-revoke-tokens-on-user-events.event.handler';
 
@@ -37,14 +38,20 @@ const eventHandlers = [AuthRevokeTokensOnUserEventsHandler];
     JwtModule.registerAsync({
       inject: [ApiConfigService],
       useFactory: (configService: ApiConfigService) => ({
-        secret: configService.jwtSecret,
-        signOptions: { expiresIn: '15m' },
+        privateKey: configService.jwt.privateKey,
+        signOptions: {
+          algorithm: 'RS256',
+          expiresIn: '15m',
+          issuer: configService.jwt.issuer,
+          audience: configService.jwt.audience,
+          keyid: configService.jwt.keyId,
+        },
       }),
     }),
     TypeOrmModule.forFeature([RefreshTokenEntity, PasswordResetTokenEntity]),
     UsersModule,
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, JwksController],
   providers: [
     TokenService,
     JwtStrategy,

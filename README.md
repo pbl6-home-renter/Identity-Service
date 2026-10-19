@@ -1,5 +1,9 @@
 # NestJS Clean Architecture & CQRS Boilerplate
 
+## Tài liệu xác thực
+
+JWT sử dụng chữ ký RSA (`RS256`). Xem [tài liệu xác thực JWT bằng RSA](docs/jwt-rsa-authentication.md) để biết cách tạo key, cấu hình environment, sử dụng JWKS, xác thực token và rotate key.
+
 Boilerplate chuẩn doanh nghiệp (Enterprise-ready) tinh gọn và rõ ràng, được xây dựng dựa trên **Clean Architecture**, **Domain-Driven Design (DDD)** và **CQRS (Command Query Responsibility Segregation)** trên nền tảng **NestJS** và **TypeORM (PostgreSQL)**.
 
 ---
