@@ -30,7 +30,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  app.setGlobalPrefix('/identity-service/api/v1', {
+  app.setGlobalPrefix('api/v1', {
     exclude: [{ path: 'health', method: RequestMethod.GET }],
   });
 
@@ -66,7 +66,7 @@ async function bootstrap() {
   const appUrl = await app.getUrl();
 
   Logger.log(`Application running on: ${appUrl}`);
-  Logger.log(`Swagger documentation: ${appUrl}/identity-service/swagger`);
+  Logger.log(`Swagger documentation: ${appUrl}/swagger`);
 
   return app;
 }

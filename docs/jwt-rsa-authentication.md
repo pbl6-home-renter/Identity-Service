@@ -38,13 +38,13 @@ Client đăng nhập
 Endpoint JWKS:
 
 ```text
-GET /identity-service/api/v1/.well-known/jwks.json
+GET /api/v1/.well-known/jwks.json
 ```
 
 Swagger khi được bật:
 
 ```text
-GET /identity-service/swagger
+GET /swagger
 ```
 
 ## Tạo cặp key RSA
