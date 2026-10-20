@@ -57,6 +57,7 @@
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "tsconfig-paths": "^4.2.0",
     "typeorm": "^1.1.1",
     "typeorm-extension": "^4.3.0"
   },
@@ -81,7 +82,6 @@
     "source-map-support": "^0.5.21",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
     "typescript": "^6.0.2"
   }
 }
