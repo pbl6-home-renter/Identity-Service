@@ -1,5 +1,4 @@
 FROM node:24.18.0-slim AS builder
-
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --ignore-scripts
@@ -21,10 +20,11 @@ ENV PORT=$PORT
 COPY package*.json ./
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-COPY start.sh ./start.sh
+COPY ./start.sh ./start.sh
 
 RUN sed -i 's/\r$//' ./start.sh && chmod +x ./start.sh
 
 EXPOSE $PORT
 
 CMD ["./start.sh"]
+

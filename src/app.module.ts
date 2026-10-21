@@ -7,6 +7,8 @@ import { SharedModule } from './shared/shared.module';
 import { HealthModule } from './modules/health/health.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { InboxModule } from './modules/inbox/inbox.module';
+import { OutboxModule } from './modules/outbox/outbox.module';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { AuthModule } from './modules/auth/auth.module';
     SharedModule,
     UsersModule,
     AuthModule,
+    InboxModule,
+    OutboxModule,
     HealthModule,
   ],
 

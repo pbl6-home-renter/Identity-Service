@@ -3,34 +3,28 @@ import { ConfigModule } from '@nestjs/config';
 import { ApiConfigService } from './services/api-config.service';
 import { TypeormModule } from './infra/typeorm/typeorm.module';
 import { RabbitmqModule } from './infra/rabbitmq/rabbitmq.module';
-import { MESSAGE_BROKER_DI_TOKEN } from './di-tokens/message-broker.di-token';
-import { RabbitmqRepository } from './infra/rabbitmq/rabbitmq.repository';
-import { DatabaseConfigService } from './services/database-config.service';
+import { TypeOrmUnitOfWork } from './infra/typeorm/transaction/typeorm-unit-of-work';
+import { UNIT_OF_WORK_DI_TOKEN } from './di-tokens/unit-of-work.di-token';
 
 @Global()
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env'],
+      envFilePath: '.env',
     }),
     TypeormModule,
     RabbitmqModule,
   ],
   providers: [
     ApiConfigService,
-    DatabaseConfigService,
-    {
-      provide: MESSAGE_BROKER_DI_TOKEN.CONSUMER,
-      useClass: RabbitmqRepository,
-    },
+    { provide: UNIT_OF_WORK_DI_TOKEN, useClass: TypeOrmUnitOfWork },
   ],
   exports: [
     ApiConfigService,
-    DatabaseConfigService,
     TypeormModule,
     RabbitmqModule,
-    MESSAGE_BROKER_DI_TOKEN.CONSUMER,
+    UNIT_OF_WORK_DI_TOKEN,
   ],
 })
 export class SharedModule {}
