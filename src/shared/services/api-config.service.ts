@@ -1,32 +1,129 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {
+  getConfigBoolean,
+  getConfigNumber,
+  getConfigString,
+} from '../configuration/config-value';
+import {
+  DatabaseConfig,
+  resolveDatabaseConfig,
+} from '../configuration/database.config';
+import { OutboxConfig } from '../configuration/outbox.config';
+import { RabbitMqConfig } from '../configuration/rabbitmq.config';
 
 @Injectable()
 export class ApiConfigService {
   constructor(private readonly configService: ConfigService) {}
 
   get appName(): string {
-    return this.getString('APP_NAME', 'MyApp');
+    return getConfigString(this.configService, 'APP_NAME', 'MyApp');
   }
 
-  get rabbitMqUrl(): string {
-    return this.getString('RABBITMQ_URL', 'amqp://localhost:5672');
+  get databaseConfig(): DatabaseConfig {
+    return resolveDatabaseConfig((key) => this.configService.get<string>(key));
+  }
+
+  get rabbitMqConfig(): RabbitMqConfig {
+    return {
+      url: getConfigString(
+        this.configService,
+        'RABBITMQ_URL',
+        'amqp://localhost:5672',
+      ),
+      exchange: getConfigString(
+        this.configService,
+        'RABBITMQ_EXCHANGE',
+        `${this.appName}.events`,
+      ),
+      exchangeType: getConfigString(
+        this.configService,
+        'RABBITMQ_EXCHANGE_TYPE',
+        'topic',
+      ),
+      prefetch: getConfigNumber(this.configService, 'RABBITMQ_PREFETCH', 10),
+      connectTimeoutMs: getConfigNumber(
+        this.configService,
+        'RABBITMQ_CONNECT_TIMEOUT_MS',
+        10000,
+      ),
+      consumerMaxAttempts: getConfigNumber(
+        this.configService,
+        'RABBITMQ_CONSUMER_MAX_ATTEMPTS',
+        5,
+      ),
+      consumerRetryDelayMs: getConfigNumber(
+        this.configService,
+        'RABBITMQ_CONSUMER_RETRY_DELAY_MS',
+        10000,
+      ),
+    };
+  }
+
+  get outboxConfig(): OutboxConfig {
+    return {
+      relayEnabled: getConfigBoolean(
+        this.configService,
+        'OUTBOX_RELAY_ENABLED',
+        true,
+      ),
+      relayIntervalMs: getConfigNumber(
+        this.configService,
+        'OUTBOX_RELAY_INTERVAL_MS',
+        1000,
+      ),
+      relayBatchSize: getConfigNumber(
+        this.configService,
+        'OUTBOX_RELAY_BATCH_SIZE',
+        100,
+      ),
+      publishTimeoutMs: getConfigNumber(
+        this.configService,
+        'OUTBOX_PUBLISH_TIMEOUT_MS',
+        5000,
+      ),
+      claimTimeoutMs: getConfigNumber(
+        this.configService,
+        'OUTBOX_CLAIM_TIMEOUT_MS',
+        60000,
+      ),
+      maxAttempts: getConfigNumber(
+        this.configService,
+        'OUTBOX_MAX_ATTEMPTS',
+        10,
+      ),
+      retryBaseDelayMs: getConfigNumber(
+        this.configService,
+        'OUTBOX_RETRY_BASE_DELAY_MS',
+        1000,
+      ),
+      retryMaxDelayMs: getConfigNumber(
+        this.configService,
+        'OUTBOX_RETRY_MAX_DELAY_MS',
+        60000,
+      ),
+      retentionMs: getConfigNumber(
+        this.configService,
+        'OUTBOX_RETENTION_MS',
+        604800000,
+      ),
+    };
   }
 
   get apiDomain(): string {
-    return this.getString('API_DOMAIN', 'localhost');
+    return getConfigString(this.configService, 'API_DOMAIN', 'localhost');
   }
 
   get serverPort(): number {
-    return this.getNumber('PORT', 3001);
+    return getConfigNumber(this.configService, 'PORT', 3001);
   }
 
   get enableSwagger(): boolean {
-    return this.getBoolean('ENABLE_DOCUMENTATION', true);
+    return getConfigBoolean(this.configService, 'ENABLE_DOCUMENTATION', true);
   }
 
   get logLevel(): string {
-    return this.getString('LOG_LEVEL', 'debug');
+    return getConfigString(this.configService, 'LOG_LEVEL', 'debug');
   }
 
   get jwt(): {
@@ -37,11 +134,23 @@ export class ApiConfigService {
     audience: string;
   } {
     return {
-      privateKey: this.getString('JWT_PRIVATE_KEY'),
-      publicKey: this.getString('JWT_PUBLIC_KEY'),
-      keyId: this.getString('JWT_KEY_ID', 'rentify-identity-2026-01'),
-      issuer: this.getString('JWT_ISSUER', 'rentify-identity'),
-      audience: this.getString('JWT_AUDIENCE', 'rentify-api'),
+      privateKey: getConfigString(this.configService, 'JWT_PRIVATE_KEY'),
+      publicKey: getConfigString(this.configService, 'JWT_PUBLIC_KEY'),
+      keyId: getConfigString(
+        this.configService,
+        'JWT_KEY_ID',
+        'rentify-identity-2026-01',
+      ),
+      issuer: getConfigString(
+        this.configService,
+        'JWT_ISSUER',
+        'rentify-identity',
+      ),
+      audience: getConfigString(
+        this.configService,
+        'JWT_AUDIENCE',
+        'rentify-api',
+      ),
     };
   }
 
@@ -53,50 +162,31 @@ export class ApiConfigService {
     phone: string;
   } {
     return {
-      id: this.getString(
+      id: getConfigString(
+        this.configService,
         'DEFAULT_ADMIN_ID',
         '00000000-0000-4000-8000-000000000001',
       ),
-      email: this.getString('DEFAULT_ADMIN_EMAIL', 'admin@example.com'),
-      password: this.getString('DEFAULT_ADMIN_PASSWORD', 'AdminPassword123!'),
-      name: this.getString('DEFAULT_ADMIN_NAME', 'System Administrator'),
-      phone: this.getString('DEFAULT_ADMIN_PHONE', '0900000000'),
+      email: getConfigString(
+        this.configService,
+        'DEFAULT_ADMIN_EMAIL',
+        'admin@example.com',
+      ),
+      password: getConfigString(
+        this.configService,
+        'DEFAULT_ADMIN_PASSWORD',
+        'AdminPassword123!',
+      ),
+      name: getConfigString(
+        this.configService,
+        'DEFAULT_ADMIN_NAME',
+        'System Administrator',
+      ),
+      phone: getConfigString(
+        this.configService,
+        'DEFAULT_ADMIN_PHONE',
+        '0900000000',
+      ),
     };
-  }
-
-  private getNumber(key: string, defaultValue?: number): number {
-    const value = this.get(key, defaultValue?.toString());
-    const parsed = Number(value);
-    if (isNaN(parsed)) {
-      throw new Error(`Environment variable "${key}" is not a valid number`);
-    }
-    return parsed;
-  }
-
-  private getBoolean(key: string, defaultValue?: boolean): boolean {
-    const value = this.get(key, defaultValue?.toString());
-    try {
-      return Boolean(JSON.parse(value));
-    } catch {
-      return value === 'true';
-    }
-  }
-
-  private getString(key: string, defaultValue?: string): string {
-    const value = this.get(key, defaultValue);
-    return value.replaceAll('\\n', '\n');
-  }
-
-  private get(key: string, defaultValue?: string): string {
-    const value = this.configService.get<string>(key);
-
-    if (value === undefined || value === null || value === '') {
-      if (defaultValue !== undefined) {
-        return defaultValue;
-      }
-      throw new Error(`Environment variable "${key}" is required but not set`);
-    }
-
-    return value;
   }
 }
