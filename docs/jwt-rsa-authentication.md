@@ -44,7 +44,7 @@ GET /api/v1/.well-known/jwks.json
 Swagger khi được bật:
 
 ```text
-GET /swagger
+GET /api/v1/identity/swagger
 ```
 
 ## Tạo cặp key RSA

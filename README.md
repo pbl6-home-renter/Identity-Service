@@ -15,7 +15,7 @@ Boilerplate chuẩn doanh nghiệp (Enterprise-ready) tinh gọn và rõ ràng, 
 - **Dependency Inversion (DI Tokens)**: Sử dụng Symbol DI Token để đảo ngược phụ thuộc giữa Domain và Infrastructure.
 - **Cơ sở dữ liệu (TypeORM & PostgreSQL)**: Cấu hình Data Source tối ưu, tự động mapping snake_case naming strategy, hỗ trợ Migration và Database Seeding (`typeorm-extension`).
 - **Global Exception Filter chuẩn Clean Architecture**: Tự động nhận diện Domain Exception (`BaseException`), NestJS `HttpException`, và Validation errors để map HTTP status code chuẩn xác (404, 409, 400...).
-- **Tài liệu API tự động (Swagger/OpenAPI)**: Tự động sinh tài liệu API trực quan tại `/swagger`.
+- **Tài liệu API tự động (Swagger/OpenAPI)**: Tự động sinh tài liệu API trực quan tại `/api/v1/identity/swagger` (JSON: `/api/v1/identity/swagger/json`). Health check: `/api/v1/identity/health`.
 - **Bộ khung thuần khiết (Pure Skeleton)**: Không chứa logic nghiệp vụ dư thừa, dễ dàng sao chép và mở rộng cho bất kỳ dự án nào.
 
 ---
@@ -113,7 +113,8 @@ docker compose up --build -d
 ```
 
 - **Backend API**: `http://localhost:3001/api/v1`
-- **Swagger Docs**: `http://localhost:3001/swagger`
+- **Swagger Docs**: `http://localhost:3001/api/v1/identity/swagger`
+- **Health**: `http://localhost:3001/api/v1/identity/health`
 
 ---
 

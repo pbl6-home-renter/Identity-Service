@@ -1,4 +1,4 @@
-import { Logger, RequestMethod } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
@@ -18,9 +18,7 @@ async function bootstrap() {
   const configService = app.select(SharedModule).get(ApiConfigService);
 
   app.use(cookieParser());
-  app.setGlobalPrefix('api/v1', {
-    exclude: [{ path: 'health', method: RequestMethod.GET }],
-  });
+  app.setGlobalPrefix('api/v1');
   app.enableCors();
   app.useGlobalPipes(new AppValidationPipe());
   app.useBodyParser('json', { limit: '10mb', strict: false });
@@ -48,7 +46,7 @@ async function bootstrap() {
 
   const appUrl = await app.getUrl();
   Logger.log(`Application running on: ${appUrl}`);
-  Logger.log(`Swagger documentation: ${appUrl}/swagger`);
+  Logger.log(`Swagger documentation: ${appUrl}/api/v1/identity/swagger`);
   return app;
 }
 
