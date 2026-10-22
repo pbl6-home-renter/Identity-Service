@@ -8,16 +8,16 @@ export function configureSwagger(
 ) {
   if (configService.enableSwagger) {
     const config = new DocumentBuilder()
-      .setTitle('NestJS Clean Architecture API')
-      .setDescription(
-        'Production-grade boilerplate using DDD, CQRS, and Clean Architecture',
-      )
+      .setTitle('Identity Service API')
+      .setDescription('Auth, users and landlord profiles')
       .setVersion('1.0.0')
       .addBearerAuth()
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('swagger', app, document, {
+    SwaggerModule.setup('identity/swagger', app, document, {
+      useGlobalPrefix: true,
+      jsonDocumentUrl: 'identity/swagger/json',
       swaggerOptions: {
         persistAuthorization: true,
       },

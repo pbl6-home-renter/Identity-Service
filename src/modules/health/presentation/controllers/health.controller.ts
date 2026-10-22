@@ -3,7 +3,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ResponseCode } from 'shared/decorators/response-code.decorator';
 
 @ApiTags('Health')
-@Controller('health')
+@Controller('identity/health')
 export class HealthController {
   @Get()
   @HttpCode(HttpStatus.OK)
