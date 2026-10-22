@@ -1,8 +1,10 @@
-import { BaseEntity } from 'shared/domain/entities/base.entity';
+import { AggregateRoot } from 'shared/domain/entities/aggregate-root';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { generateUuid } from 'utils/uuid.utils';
+import { PasswordResetTokenProps } from './password-reset-token.props';
+import { PasswordResetTokenExpiredException } from '../exceptions/password-reset-token-expired.exception';
 
-export class PasswordResetToken extends BaseEntity {
+export class PasswordResetToken extends AggregateRoot {
   private constructor(
     readonly userId: Uuid,
     readonly tokenHash: string,
@@ -15,17 +17,21 @@ export class PasswordResetToken extends BaseEntity {
     super(id, createdAt, updatedAt, isDeleted);
   }
 
-  static create(
-    props: Omit<
-      PasswordResetToken,
-      'id' | 'createdAt' | 'updatedAt' | 'isDeleted' | 'markAsDeleted'
-    > & {
-      id?: Uuid;
-      createdAt?: Date;
-      updatedAt?: Date;
-      isDeleted?: boolean;
-    },
-  ): PasswordResetToken {
+  isExpired(now: Date): boolean {
+    return this.expiresAt.getTime() <= now.getTime();
+  }
+
+  assertUsable(now: Date): void {
+    if (this.isExpired(now)) {
+      throw new PasswordResetTokenExpiredException();
+    }
+  }
+
+  static create(props: PasswordResetTokenProps): PasswordResetToken {
+    return PasswordResetToken.reconstitute(props);
+  }
+
+  static reconstitute(props: PasswordResetTokenProps): PasswordResetToken {
     return new PasswordResetToken(
       props.userId,
       props.tokenHash,

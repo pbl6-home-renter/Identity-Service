@@ -26,8 +26,8 @@ export class UserUpdateAdminResponseDto {
     const dto = new UserUpdateAdminResponseDto();
     dto.userId = user.id;
     dto.name = user.name;
-    dto.phone = user.phone;
-    dto.email = user.email;
+    dto.phone = user.phone.value;
+    dto.email = user.email.value;
     dto.status = user.status;
     return dto;
   }

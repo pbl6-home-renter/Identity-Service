@@ -1,12 +1,14 @@
 import { User } from '../../domain/entities/user';
 import { UserEntity } from '../persistence/user.entity';
+import { Email } from '../../domain/value-objects/email.vo';
+import { Phone } from '../../domain/value-objects/phone.vo';
 
 export class UserMapper {
   static toDomain(raw: UserEntity): User {
-    return User.create({
+    return User.reconstitute({
       id: raw.id,
-      phone: raw.phone,
-      email: raw.email,
+      phone: Phone.create(raw.phone),
+      email: Email.create(raw.email),
       password: raw.password,
       name: raw.name,
       role: raw.role,
@@ -22,8 +24,8 @@ export class UserMapper {
   static toPersistence(domain: User): UserEntity {
     const raw = new UserEntity();
     raw.id = domain.id;
-    raw.phone = domain.phone;
-    raw.email = domain.email;
+    raw.phone = domain.phone.value;
+    raw.email = domain.email.value;
     raw.password = domain.password;
     raw.name = domain.name;
     raw.role = domain.role;

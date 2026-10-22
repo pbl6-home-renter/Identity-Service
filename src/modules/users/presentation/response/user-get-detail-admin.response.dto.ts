@@ -50,8 +50,8 @@ export class UserGetDetailAdminResponseDto {
     const dto = new UserGetDetailAdminResponseDto();
     dto.id = result.user.id;
     dto.name = result.user.name;
-    dto.email = result.user.email;
-    dto.phone = result.user.phone;
+    dto.email = result.user.email.value;
+    dto.phone = result.user.phone.value;
     dto.role = result.user.role;
     dto.status = result.user.status;
     dto.lockReason = result.user.lockReason ?? null;

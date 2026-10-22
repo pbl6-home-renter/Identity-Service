@@ -30,8 +30,8 @@ export class UserListAdminResponseDto {
     const dto = new UserListAdminResponseDto();
     dto.id = user.id;
     dto.name = user.name;
-    dto.email = user.email;
-    dto.phone = user.phone;
+    dto.email = user.email.value;
+    dto.phone = user.phone.value;
     dto.role = user.role;
     dto.status = user.status;
     return dto;

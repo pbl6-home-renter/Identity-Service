@@ -9,6 +9,10 @@ import { AUTH_DI_TOKEN } from '../../../auth.di-token';
 import { IAuthRepository } from '../../../domain/repositories/auth.repository.interface';
 import { TokenService } from '../../../infra/services/token.service';
 import { User } from '../../../../users/domain/entities/user';
+import { Email } from '../../../../users/domain/value-objects/email.vo';
+import { Phone } from '../../../../users/domain/value-objects/phone.vo';
+import { InvalidEmailException } from '../../../../users/domain/exceptions/invalid-email.exception';
+import { InvalidPhoneException } from '../../../../users/domain/exceptions/invalid-phone.exception';
 import { RefreshToken } from '../../../domain/entities/refresh-token';
 import { AuthLoginInvalidCredentialsException } from '../../../domain/exceptions/auth-login-invalid-credentials.exception';
 
@@ -42,7 +46,7 @@ export class AuthLoginCommandHandler implements ICommandHandler<
     identifier: string,
     plainPassword: string,
   ): Promise<User> {
-    const user = await this.userRepository.findByIdentifier(identifier);
+    const user = await this.findByIdentifier(identifier);
     if (!user) {
       throw new AuthLoginInvalidCredentialsException();
     }
@@ -56,6 +60,28 @@ export class AuthLoginCommandHandler implements ICommandHandler<
     }
 
     return user;
+  }
+
+  private async findByIdentifier(identifier: string): Promise<User | null> {
+    let lookup: Email | Phone;
+    try {
+      lookup = identifier.includes('@')
+        ? Email.create(identifier)
+        : Phone.create(identifier);
+    } catch (error) {
+      if (
+        error instanceof InvalidEmailException ||
+        error instanceof InvalidPhoneException
+      ) {
+        return null;
+      }
+
+      throw error;
+    }
+
+    return lookup instanceof Email
+      ? this.userRepository.findByEmail(lookup)
+      : this.userRepository.findByPhone(lookup);
   }
 
   private async issueTokens(

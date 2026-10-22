@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsNotEmpty, IsString, Length, Matches } from 'class-validator';
-import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/payout-account';
+import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/payout-account.vo';
 import { IsRequired } from 'shared/decorators/is-required.decorator';
 import { UserValidationMessageConstant } from '../constants/user-validation-message.constant';
 
@@ -47,10 +47,10 @@ export class PayoutAccountRequestDto {
   accountName: string;
 
   toDomain(): PayoutAccount {
-    return {
+    return PayoutAccount.create({
       bankCode: this.bankCode,
       accountNumber: this.accountNumber,
       accountName: this.accountName,
-    };
+    });
   }
 }

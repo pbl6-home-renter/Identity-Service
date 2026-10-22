@@ -1,4 +1,4 @@
-import { BaseException } from './base.exception';
+import { BaseException } from 'shared/domain/exceptions/base.exception';
 
 export class PhoneAlreadyExistsException extends BaseException {
   constructor(phone: string) {

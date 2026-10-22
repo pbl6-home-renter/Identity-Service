@@ -18,7 +18,7 @@ export class UserUpdateMeResponseDto {
     return {
       id: result.user.id,
       name: result.user.name,
-      phone: result.user.phone.replace(/^\+84/, '0'),
+      phone: result.user.phone.value,
       payoutAccount: result.payoutAccount
         ? PayoutAccountResponseDto.fromDomain(result.payoutAccount)
         : null,

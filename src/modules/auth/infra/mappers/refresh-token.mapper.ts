@@ -3,7 +3,7 @@ import { RefreshTokenEntity } from '../persistence/refresh-token.entity';
 
 export class RefreshTokenMapper {
   static toDomain(refreshToken: RefreshTokenEntity): RefreshToken {
-    return RefreshToken.create({
+    return RefreshToken.reconstitute({
       id: refreshToken.id,
       userId: refreshToken.userId,
       tokenHash: refreshToken.tokenHash,

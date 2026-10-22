@@ -3,7 +3,7 @@ import { PasswordResetTokenEntity } from '../persistence/password-reset-token.en
 
 export class PasswordResetTokenMapper {
   static toDomain(raw: PasswordResetTokenEntity): PasswordResetToken {
-    return PasswordResetToken.create({
+    return PasswordResetToken.reconstitute({
       id: raw.id,
       userId: raw.userId,
       tokenHash: raw.tokenHash,

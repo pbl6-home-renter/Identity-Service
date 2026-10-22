@@ -11,9 +11,11 @@ import { TokenService } from '../../../infra/services/token.service';
 import { UserRole } from 'shared/domain/enums/user-role.enum';
 import { UserStatus } from 'shared/domain/enums/user-status.enum';
 import { User } from '../../../../users/domain/entities/user';
+import { Email } from '../../../../users/domain/value-objects/email.vo';
+import { Phone } from '../../../../users/domain/value-objects/phone.vo';
 import { RefreshToken } from '../../../domain/entities/refresh-token';
-import { EmailAlreadyExistsException } from 'shared/domain/exceptions/email-already-exists.exception';
-import { PhoneAlreadyExistsException } from 'shared/domain/exceptions/phone-already-exists.exception';
+import { EmailAlreadyExistsException } from 'modules/users/domain/exceptions/email-already-exists.exception';
+import { PhoneAlreadyExistsException } from 'modules/users/domain/exceptions/phone-already-exists.exception';
 import { AuthRegisterRoleNotAllowedException } from '../../../domain/exceptions/auth-register-role-not-allowed.exception';
 
 @CommandHandler(AuthRegisterCommand)
@@ -31,9 +33,11 @@ export class AuthRegisterCommandHandler implements ICommandHandler<
 
   async execute(command: AuthRegisterCommand): Promise<AuthResult> {
     this.validateRole(command.role);
-    await this.validateUniqueCredentials(command.email, command.phone);
+    const email = Email.create(command.email);
+    const phone = Phone.create(command.phone);
+    await this.validateUniqueCredentials(email, phone);
 
-    const user = await this.createUser(command);
+    const user = await this.createUser(command, email, phone);
     const { accessToken, rawRefreshToken } = await this.issueTokens(user);
 
     return AuthResult.create(accessToken, rawRefreshToken, user);
@@ -46,27 +50,31 @@ export class AuthRegisterCommandHandler implements ICommandHandler<
   }
 
   private async validateUniqueCredentials(
-    email: string,
-    phone: string,
+    email: Email,
+    phone: Phone,
   ): Promise<void> {
     const existingByEmail = await this.userRepository.findByEmail(email);
     if (existingByEmail) {
-      throw new EmailAlreadyExistsException(email);
+      throw new EmailAlreadyExistsException(email.value);
     }
 
     const existingByPhone = await this.userRepository.findByPhone(phone);
     if (existingByPhone) {
-      throw new PhoneAlreadyExistsException(phone);
+      throw new PhoneAlreadyExistsException(phone.value);
     }
   }
 
-  private async createUser(command: AuthRegisterCommand): Promise<User> {
+  private async createUser(
+    command: AuthRegisterCommand,
+    email: Email,
+    phone: Phone,
+  ): Promise<User> {
     const hashedPassword = await BcryptUtils.hash(command.password);
 
     const user = User.create({
       name: command.name,
-      email: command.email,
-      phone: command.phone,
+      email,
+      phone,
       password: hashedPassword,
       role: command.role,
       status: UserStatus.ACTIVE,

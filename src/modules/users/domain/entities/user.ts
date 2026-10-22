@@ -1,15 +1,18 @@
-import { BaseEntity } from 'shared/domain/entities/base.entity';
+import { AggregateRoot } from 'shared/domain/entities/aggregate-root';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { generateUuid } from 'utils/uuid.utils';
+import { UserProps } from './user.props';
+import { Email } from '../value-objects/email.vo';
+import { Phone } from '../value-objects/phone.vo';
 import { UserRole } from 'shared/domain/enums/user-role.enum';
 import { UserStatus } from 'shared/domain/enums/user-status.enum';
 import { UserLockAlreadyLockedException } from '../exceptions/user-lock-already-locked.exception';
 import { UserUnlockNotLockedException } from '../exceptions/user-unlock-not-locked.exception';
 
-export class User extends BaseEntity {
+export class User extends AggregateRoot {
   private constructor(
-    readonly phone: string,
-    readonly email: string,
+    readonly phone: Phone,
+    readonly email: Email,
     readonly password: string,
     readonly name: string,
     readonly role: UserRole,
@@ -54,8 +57,8 @@ export class User extends BaseEntity {
     this._lockedAt = null;
   }
 
-  updateProfile(props: { name?: string; phone?: string }): User {
-    return User.create({
+  updateProfile(props: { name?: string; phone?: Phone }): User {
+    return User.reconstitute({
       id: this.id,
       phone: props.phone ?? this.phone,
       email: this.email,
@@ -71,26 +74,11 @@ export class User extends BaseEntity {
     });
   }
 
-  static create(
-    props: Omit<
-      User,
-      | 'id'
-      | 'createdAt'
-      | 'updatedAt'
-      | 'isDeleted'
-      | 'markAsDeleted'
-      | 'lock'
-      | 'unlock'
-      | 'updateProfile'
-    > & {
-      id?: Uuid;
-      createdAt?: Date;
-      updatedAt?: Date;
-      isDeleted?: boolean;
-      lockReason?: string | null;
-      lockedAt?: Date | null;
-    },
-  ): User {
+  static create(props: UserProps): User {
+    return User.reconstitute(props);
+  }
+
+  static reconstitute(props: UserProps): User {
     return new User(
       props.phone,
       props.email,

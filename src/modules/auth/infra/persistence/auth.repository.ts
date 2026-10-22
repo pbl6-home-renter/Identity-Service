@@ -9,7 +9,7 @@ import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { PasswordResetTokenEntity } from './password-reset-token.entity';
 import { UserEntity } from '../../../users/infra/persistence/user.entity';
 import { PasswordResetTokenUsedException } from '../../domain/exceptions/password-reset-token-used.exception';
-import { PasswordResetTokenExpiredException } from '../../domain/exceptions/password-reset-token-expired.exception';
+import { PasswordResetTokenMapper } from '../mappers/password-reset-token.mapper';
 
 @Injectable()
 export class AuthRepository implements IAuthRepository {
@@ -60,9 +60,7 @@ export class AuthRepository implements IAuthRepository {
           throw new PasswordResetTokenUsedException();
         }
 
-        if (resetToken.expiresAt.getTime() <= Date.now()) {
-          throw new PasswordResetTokenExpiredException();
-        }
+        PasswordResetTokenMapper.toDomain(resetToken).assertUsable(new Date());
 
         const user = await manager.findOne(UserEntity, {
           where: { id: resetToken.userId, isDeleted: false },

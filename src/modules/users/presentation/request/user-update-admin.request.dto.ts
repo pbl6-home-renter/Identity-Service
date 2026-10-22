@@ -8,7 +8,7 @@ import {
   Matches,
 } from 'class-validator';
 import { UserValidationMessageConstant } from '../constants/user-validation-message.constant';
-import { IsPhoneNumber } from 'shared/decorators/is-phone-number.decorator';
+import { IsPhoneNumber } from 'modules/users/presentation/validators/is-phone-number.decorator';
 
 export class UserUpdateAdminRequestDto {
   static readonly unexpectedFieldCode = 'VALIDATION_FAILED';

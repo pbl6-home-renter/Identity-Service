@@ -10,6 +10,7 @@ import { RequestPasswordResetCommand } from '../implements/request-password-rese
 import { UserNotFoundException } from 'modules/users/domain/exceptions/user-not-found.exception';
 import { AuthLoginAccountLockedException } from '../../../domain/exceptions/auth-login-account-locked.exception';
 import { PasswordResetToken } from '../../../domain/entities/password-reset-token';
+import { Email } from '../../../../users/domain/value-objects/email.vo';
 
 @CommandHandler(RequestPasswordResetCommand)
 export class RequestPasswordResetCommandHandler implements ICommandHandler<RequestPasswordResetCommand> {
@@ -22,7 +23,9 @@ export class RequestPasswordResetCommandHandler implements ICommandHandler<Reque
   ) {}
 
   async execute(command: RequestPasswordResetCommand): Promise<void> {
-    const user = await this.userRepository.findByEmail(command.email);
+    const user = await this.userRepository.findByEmail(
+      Email.create(command.email),
+    );
     if (!user) {
       throw new UserNotFoundException();
     }

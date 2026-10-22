@@ -9,7 +9,7 @@ import {
   Matches,
 } from 'class-validator';
 import { IsRequired } from 'shared/decorators/is-required.decorator';
-import { IsPhoneNumber } from 'shared/decorators/is-phone-number.decorator';
+import { IsPhoneNumber } from 'modules/users/presentation/validators/is-phone-number.decorator';
 import { UserRole } from 'shared/domain/enums/user-role.enum';
 import { AuthRegisterCommand } from '../../use-case/commands/implements/auth-register.command';
 import { AuthValidationMessageConstant } from '../constants/auth-validation-message.constant';

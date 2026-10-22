@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
-import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/payout-account';
+import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/payout-account.vo';
 import { UserRole } from 'shared/domain/enums/user-role.enum';
 import { UserStatus } from 'shared/domain/enums/user-status.enum';
 import { User } from '../../domain/entities/user';
@@ -39,8 +39,8 @@ export class UserGetMeResponseDto {
     const dto = new UserGetMeResponseDto();
     dto.id = user.id;
     dto.name = user.name;
-    dto.email = user.email;
-    dto.phone = user.phone;
+    dto.email = user.email.value;
+    dto.phone = user.phone.value;
     dto.role = user.role;
     dto.status = user.status;
     dto.payoutAccount = payoutAccount

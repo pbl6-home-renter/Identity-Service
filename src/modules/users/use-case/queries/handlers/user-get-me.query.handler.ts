@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { LandlordProfile } from 'modules/landlord-profiles/domain/entities/landlord-profile';
-import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/payout-account';
+import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/payout-account.vo';
 import { UserRole } from 'shared/domain/enums/user-role.enum';
 import { UserNotFoundException } from '../../../domain/exceptions/user-not-found.exception';
 import { USERS_DI_TOKEN } from '../../../users.di-token';
@@ -39,14 +39,6 @@ export class UserGetMeQueryHandler implements IQueryHandler<
   private toPayoutAccount(
     profile: LandlordProfile | null,
   ): PayoutAccount | null {
-    if (!profile?.bankCode || !profile.accountNumber || !profile.accountName) {
-      return null;
-    }
-
-    return {
-      bankCode: profile.bankCode,
-      accountNumber: profile.accountNumber,
-      accountName: profile.accountName,
-    };
+    return profile?.payoutAccount ?? null;
   }
 }

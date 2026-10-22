@@ -1,4 +1,4 @@
-import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/payout-account';
+import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/payout-account.vo';
 import { User } from '../../domain/entities/user';
 
 export class UserDetailResult {

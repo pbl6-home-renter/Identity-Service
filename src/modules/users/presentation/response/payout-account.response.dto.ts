@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/payout-account';
+import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/payout-account.vo';
 
 export class PayoutAccountResponseDto {
   @ApiProperty({ example: '970422' })

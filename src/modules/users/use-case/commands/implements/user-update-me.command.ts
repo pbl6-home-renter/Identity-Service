@@ -1,5 +1,5 @@
 import { ICommand } from '@nestjs/cqrs';
-import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/payout-account';
+import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/payout-account.vo';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { UserUpdateMeRequestDto } from '../../../presentation/request/user-update-me.request.dto';
 

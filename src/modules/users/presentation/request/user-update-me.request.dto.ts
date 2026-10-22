@@ -11,11 +11,12 @@ import {
 } from 'class-validator';
 import { UserValidationMessageConstant } from '../constants/user-validation-message.constant';
 import { IsRequired } from 'shared/decorators/is-required.decorator';
-import { IsPhoneNumber } from 'shared/decorators/is-phone-number.decorator';
+import { IsPhoneNumber } from 'modules/users/presentation/validators/is-phone-number.decorator';
 import { PayoutAccountRequestDto } from './payout-account.request.dto';
 
 export class UserUpdateMeRequestDto {
   static readonly unexpectedFieldCode = 'VALIDATION_FAILED';
+
   @ApiProperty({
     example: 'Lê Văn An Mới',
     minLength: 1,

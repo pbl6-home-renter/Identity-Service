@@ -1,8 +1,9 @@
-import { BaseEntity } from 'shared/domain/entities/base.entity';
+import { AggregateRoot } from 'shared/domain/entities/aggregate-root';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { generateUuid } from 'utils/uuid.utils';
+import { RefreshTokenProps } from './refresh-token.props';
 
-export class RefreshToken extends BaseEntity {
+export class RefreshToken extends AggregateRoot {
   private constructor(
     readonly userId: Uuid,
     readonly tokenHash: string,
@@ -16,17 +17,11 @@ export class RefreshToken extends BaseEntity {
     super(id, createdAt, updatedAt, isDeleted);
   }
 
-  static create(
-    props: Omit<
-      RefreshToken,
-      'id' | 'createdAt' | 'updatedAt' | 'isDeleted' | 'markAsDeleted'
-    > & {
-      id?: Uuid;
-      createdAt?: Date;
-      updatedAt?: Date;
-      isDeleted?: boolean;
-    },
-  ): RefreshToken {
+  static create(props: RefreshTokenProps): RefreshToken {
+    return RefreshToken.reconstitute(props);
+  }
+
+  static reconstitute(props: RefreshTokenProps): RefreshToken {
     return new RefreshToken(
       props.userId,
       props.tokenHash,

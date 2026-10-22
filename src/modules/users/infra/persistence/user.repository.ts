@@ -6,14 +6,16 @@ import { IOffsetPaginationQueryRequestDto } from 'shared/domain/pagination/i-off
 import { IPaginationResponseDto } from 'shared/domain/pagination/i-pagination.response.dto';
 import { TypeOrmPaginator } from 'shared/infra/typeorm/pagination/typeorm.paginator';
 import { PostgresErrorCode } from 'shared/infra/typeorm/constants/postgres-error-code.constant';
-import { EmailAlreadyExistsException } from 'shared/domain/exceptions/email-already-exists.exception';
-import { PhoneAlreadyExistsException } from 'shared/domain/exceptions/phone-already-exists.exception';
+import { EmailAlreadyExistsException } from 'modules/users/domain/exceptions/email-already-exists.exception';
+import { PhoneAlreadyExistsException } from 'modules/users/domain/exceptions/phone-already-exists.exception';
 import { User } from '../../domain/entities/user';
 import { UserDeleteAlreadyDeletedException } from '../../domain/exceptions/user-delete-already-deleted.exception';
 import { UserNotFoundException } from '../../domain/exceptions/user-not-found.exception';
 import { IUserRepository } from '../../domain/repositories/user.repository.interface';
 import { UserEntity } from './user.entity';
 import { UserMapper } from '../mappers/user.mapper';
+import { Email } from '../../domain/value-objects/email.vo';
+import { Phone } from '../../domain/value-objects/phone.vo';
 
 @Injectable()
 export class UserRepository implements IUserRepository {
@@ -42,10 +44,10 @@ export class UserRepository implements IUserRepository {
           `${pgError.constraint ?? ''} ${pgError.detail ?? ''}`.toLowerCase();
 
         if (text.includes('phone')) {
-          throw new PhoneAlreadyExistsException(user.phone);
+          throw new PhoneAlreadyExistsException(user.phone.value);
         }
         if (text.includes('email')) {
-          throw new EmailAlreadyExistsException(user.email);
+          throw new EmailAlreadyExistsException(user.email.value);
         }
       }
 
@@ -69,9 +71,9 @@ export class UserRepository implements IUserRepository {
     return UserMapper.toDomain(raw);
   }
 
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(email: Email): Promise<User | null> {
     const raw = await this.repository.findOne({
-      where: { email, isDeleted: false },
+      where: { email: email.value, isDeleted: false },
     });
     if (!raw) {
       return null;
@@ -79,25 +81,10 @@ export class UserRepository implements IUserRepository {
     return UserMapper.toDomain(raw);
   }
 
-  async findByPhone(phone: string): Promise<User | null> {
+  async findByPhone(phone: Phone): Promise<User | null> {
     const raw = await this.repository.findOne({
-      where: { phone, isDeleted: false },
+      where: { phone: phone.value, isDeleted: false },
     });
-    if (!raw) {
-      return null;
-    }
-    return UserMapper.toDomain(raw);
-  }
-
-  async findByIdentifier(identifier: string): Promise<User | null> {
-    const raw = await this.repository
-      .createQueryBuilder('user')
-      .where('user.isDeleted = :isDeleted', { isDeleted: false })
-      .andWhere('(user.email = :identifier OR user.phone = :identifier)', {
-        identifier,
-      })
-      .getOne();
-
     if (!raw) {
       return null;
     }

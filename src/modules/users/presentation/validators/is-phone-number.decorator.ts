@@ -1,13 +1,5 @@
 import { registerDecorator, ValidationOptions } from 'class-validator';
-
-export const VIETNAM_PHONE_REGEX = /^(0[0-9]{9}|\+84[0-9]{9})$/;
-
-export function isValidPhoneNumber(phone?: string | null): boolean {
-  if (!phone) {
-    return false;
-  }
-  return VIETNAM_PHONE_REGEX.test(phone);
-}
+import { Phone } from '../../domain/value-objects/phone.vo';
 
 export function IsPhoneNumber(
   message: string = 'PHONE_INVALID_FORMAT',
@@ -24,7 +16,8 @@ export function IsPhoneNumber(
           if (value === undefined || value === null) {
             return true;
           }
-          return typeof value === 'string' && isValidPhoneNumber(value);
+
+          return typeof value === 'string' && Phone.isValid(value);
         },
         defaultMessage() {
           return message;

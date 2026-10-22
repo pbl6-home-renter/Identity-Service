@@ -22,8 +22,8 @@ export class AuthUserDto {
     const dto = new AuthUserDto();
     dto.id = user.id;
     dto.name = user.name;
-    dto.email = user.email;
-    dto.phone = user.phone;
+    dto.email = user.email.value;
+    dto.phone = user.phone.value;
     dto.role = user.role;
     return dto;
   }
