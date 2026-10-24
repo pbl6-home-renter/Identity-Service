@@ -29,6 +29,10 @@ export class AuthValidationMessageConstant {
   static readonly NAME_NOT_EMPTY = 'NAME_NOT_EMPTY';
   static readonly NAME_INVALID_LENGTH = 'NAME_INVALID_LENGTH';
 
+  static readonly REFRESH_TOKEN_REQUIRED = 'REFRESH_TOKEN_REQUIRED';
+  static readonly REFRESH_TOKEN_MUST_BE_STRING = 'REFRESH_TOKEN_MUST_BE_STRING';
+  static readonly REFRESH_TOKEN_NOT_EMPTY = 'REFRESH_TOKEN_NOT_EMPTY';
+
   static readonly ROLE_REQUIRED = 'ROLE_REQUIRED';
   static readonly ROLE_INVALID = 'ROLE_INVALID';
 
@@ -72,6 +76,12 @@ export class AuthValidationMessageConstant {
     MUST_BE_STRING: AuthValidationMessageConstant.NAME_MUST_BE_STRING,
     NOT_EMPTY: AuthValidationMessageConstant.NAME_NOT_EMPTY,
     INVALID_LENGTH: AuthValidationMessageConstant.NAME_INVALID_LENGTH,
+  } as const;
+
+  static readonly REFRESH_TOKEN = {
+    REQUIRED: AuthValidationMessageConstant.REFRESH_TOKEN_REQUIRED,
+    MUST_BE_STRING: AuthValidationMessageConstant.REFRESH_TOKEN_MUST_BE_STRING,
+    NOT_EMPTY: AuthValidationMessageConstant.REFRESH_TOKEN_NOT_EMPTY,
   } as const;
 
   static readonly ROLE = {

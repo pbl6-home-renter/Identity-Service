@@ -7,7 +7,7 @@ import { USERS_DI_TOKEN } from '../../../../users/users.di-token';
 import { IUserRepository } from '../../../../users/domain/repositories/user.repository.interface';
 import { AUTH_DI_TOKEN } from '../../../auth.di-token';
 import { IAuthRepository } from '../../../domain/repositories/auth.repository.interface';
-import { TokenService } from '../../../infra/services/token.service';
+import { ITokenService } from '../../../domain/services/token.service.interface';
 import { User } from '../../../../users/domain/entities/user';
 import { Email } from '../../../../users/domain/value-objects/email.vo';
 import { Phone } from '../../../../users/domain/value-objects/phone.vo';
@@ -26,7 +26,8 @@ export class AuthLoginCommandHandler implements ICommandHandler<
     private readonly userRepository: IUserRepository,
     @Inject(AUTH_DI_TOKEN.REPOSITORY)
     private readonly authRepository: IAuthRepository,
-    private readonly tokenService: TokenService,
+    @Inject(AUTH_DI_TOKEN.TOKEN_SERVICE)
+    private readonly tokenService: ITokenService,
   ) {}
 
   async execute(command: AuthLoginCommand): Promise<AuthResult> {
@@ -34,12 +35,12 @@ export class AuthLoginCommandHandler implements ICommandHandler<
       command.identifier,
       command.password,
     );
-    const { accessToken, rawToken } = await this.issueTokens(
+    const { accessToken, rawRefreshToken } = await this.issueTokens(
       user,
       command.rememberMe,
     );
 
-    return AuthResult.create(accessToken, rawToken, user);
+    return AuthResult.create(accessToken, rawRefreshToken, user);
   }
 
   private async validateCredentials(
@@ -87,22 +88,25 @@ export class AuthLoginCommandHandler implements ICommandHandler<
   private async issueTokens(
     user: User,
     rememberMe: boolean,
-  ): Promise<{ accessToken: string; rawToken: string }> {
-    const { rawToken, tokenHash, expiresAt } =
+  ): Promise<{ accessToken: string; rawRefreshToken: string }> {
+    const { rawRefreshToken, refreshTokenHash, expiresAt } =
       this.tokenService.generateRefreshToken(rememberMe);
 
     const refreshToken = RefreshToken.create({
       userId: user.id,
-      tokenHash,
+      tokenHash: refreshTokenHash,
       expiresAt,
       revokedAt: null,
     });
 
     await this.authRepository.saveRefreshToken(refreshToken);
-    const accessToken = this.tokenService.generateAccessToken(
+
+    const accessToken = await this.tokenService.generateAccessToken(
       user.id,
       user.role,
+      user.status,
     );
-    return { accessToken, rawToken };
+
+    return { accessToken, rawRefreshToken };
   }
 }

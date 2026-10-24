@@ -3,6 +3,7 @@ import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 export interface RefreshTokenProps {
   id?: Uuid;
   userId: Uuid;
+  familyId?: Uuid;
   tokenHash: string;
   expiresAt: Date;
   revokedAt?: Date | null;

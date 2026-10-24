@@ -7,7 +7,7 @@ import { USERS_DI_TOKEN } from '../../../../users/users.di-token';
 import { IUserRepository } from '../../../../users/domain/repositories/user.repository.interface';
 import { AUTH_DI_TOKEN } from '../../../auth.di-token';
 import { IAuthRepository } from '../../../domain/repositories/auth.repository.interface';
-import { TokenService } from '../../../infra/services/token.service';
+import { ITokenService } from '../../../domain/services/token.service.interface';
 import { UserRole } from 'shared/domain/enums/user-role.enum';
 import { UserStatus } from 'shared/domain/enums/user-status.enum';
 import { User } from '../../../../users/domain/entities/user';
@@ -28,7 +28,8 @@ export class AuthRegisterCommandHandler implements ICommandHandler<
     private readonly userRepository: IUserRepository,
     @Inject(AUTH_DI_TOKEN.REPOSITORY)
     private readonly authRepository: IAuthRepository,
-    private readonly tokenService: TokenService,
+    @Inject(AUTH_DI_TOKEN.TOKEN_SERVICE)
+    private readonly tokenService: ITokenService,
   ) {}
 
   async execute(command: AuthRegisterCommand): Promise<AuthResult> {
@@ -89,21 +90,22 @@ export class AuthRegisterCommandHandler implements ICommandHandler<
   private async issueTokens(
     user: User,
   ): Promise<{ accessToken: string; rawRefreshToken: string }> {
-    const { rawToken, tokenHash, expiresAt } =
+    const { rawRefreshToken, refreshTokenHash, expiresAt } =
       this.tokenService.generateRefreshToken(true);
 
     const refreshToken = RefreshToken.create({
       userId: user.id,
-      tokenHash,
+      tokenHash: refreshTokenHash,
       expiresAt,
       revokedAt: null,
     });
 
     await this.authRepository.saveRefreshToken(refreshToken);
-    const accessToken = this.tokenService.generateAccessToken(
+    const accessToken = await this.tokenService.generateAccessToken(
       user.id,
       user.role,
+      user.status,
     );
-    return { accessToken, rawRefreshToken: rawToken };
+    return { accessToken, rawRefreshToken };
   }
 }

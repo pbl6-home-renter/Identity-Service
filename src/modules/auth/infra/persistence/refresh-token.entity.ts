@@ -12,9 +12,16 @@ export class RefreshTokenEntity extends BaseEntity {
   userId: Uuid;
 
   @Column({
+    type: 'uuid',
+    name: 'family_id',
+  })
+  familyId: Uuid;
+
+  @Column({
     type: 'varchar',
     length: 255,
     name: 'token_hash',
+    unique: true,
   })
   tokenHash: string;
 

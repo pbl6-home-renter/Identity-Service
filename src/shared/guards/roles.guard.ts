@@ -1,8 +1,14 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { AuthErrorCode } from 'shared/constants/auth-error-code.constant';
+import { ROLES_METADATA_KEY } from 'shared/decorators/auth.decorators';
 import { UserRole } from 'shared/domain/enums/user-role.enum';
-import { AuthenticatedUser } from 'shared/interfaces/authenticated-user.interface';
-import { ROLES_METADATA_KEY } from 'shared/decorators/roles.decorator';
+import { AuthenticatedRequest } from 'shared/interfaces/authenticated-user.interface';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -18,10 +24,12 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<{
-      user?: AuthenticatedUser;
-    }>();
+    const user = context.switchToHttp().getRequest<AuthenticatedRequest>().user;
 
-    return !!request.user && roles.includes(request.user.role);
+    if (!user || !roles.includes(user.role)) {
+      throw new ForbiddenException({ code: AuthErrorCode.FORBIDDEN });
+    }
+
+    return true;
   }
 }

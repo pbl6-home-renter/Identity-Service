@@ -1,5 +1,5 @@
 export interface PasswordResetTokenGenerated {
-  rawToken: string;
-  tokenHash: string;
+  rawPasswordResetToken: string;
+  passwordResetTokenHash: string;
   expiresAt: Date;
 }

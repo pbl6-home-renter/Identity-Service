@@ -1,52 +1,101 @@
 import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { createHash, randomBytes, randomUUID } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
+import { importPKCS8, SignJWT } from 'jose';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { UserRole } from 'shared/domain/enums/user-role.enum';
+import { UserStatus } from 'shared/domain/enums/user-status.enum';
 import { JwtPayload } from 'shared/interfaces/jwt-payload.interface';
-import { PasswordResetTokenGenerated } from '../../domain/models/password-reset-token-generated.model';
+import { ApiConfigService } from 'shared/services/api-config.service';
+import type { PasswordResetTokenGenerated } from '../../domain/models/password-reset-token-generated.model';
+import {
+  GeneratedOpaqueRefreshToken,
+  GeneratedRefreshToken,
+  ITokenService,
+} from '../../domain/services/token.service.interface';
 
 @Injectable()
-export class TokenService {
-  constructor(private readonly jwtService: JwtService) {}
+export class TokenService implements ITokenService {
+  private static readonly ACCESS_TOKEN_EXPIRES_IN = '15m';
+  private static readonly REFRESH_TOKEN_BYTES = 32;
+  private static readonly PASSWORD_RESET_TOKEN_BYTES = 32;
+  private static readonly PASSWORD_RESET_TOKEN_TTL_MS = 15 * 60 * 1000;
 
-  generateAccessToken(userId: Uuid, role: UserRole): string {
-    const payload: JwtPayload = { sub: userId, role };
-    return this.jwtService.sign(payload);
+  private readonly privateKey: ReturnType<typeof importPKCS8>;
+
+  constructor(private readonly configService: ApiConfigService) {
+    this.privateKey = importPKCS8(this.configService.jwt.privateKey, 'RS256');
   }
 
-  generateRefreshToken(rememberMe: boolean = true): {
-    rawToken: string;
-    tokenHash: string;
-    expiresAt: Date;
-  } {
-    const rawToken = randomUUID();
-    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+  async generateAccessToken(
+    userId: Uuid,
+    role: UserRole,
+    status: UserStatus,
+  ): Promise<string> {
+    const payload: JwtPayload = { sub: userId, role, status };
+
+    return new SignJWT(payload)
+      .setProtectedHeader({
+        alg: 'RS256',
+        kid: this.configService.jwt.keyId,
+      })
+      .setIssuer(this.configService.jwt.issuer)
+      .setAudience(this.configService.jwt.audience)
+      .setIssuedAt()
+      .setExpirationTime(TokenService.ACCESS_TOKEN_EXPIRES_IN)
+      .sign(await this.privateKey);
+  }
+
+  generateRefreshToken(rememberMe: boolean = true): GeneratedRefreshToken {
+    const { rawRefreshToken, refreshTokenHash } =
+      this.generateOpaqueRefreshToken();
 
     const expirationDays = rememberMe ? 7 : 1;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + expirationDays);
 
     return {
-      rawToken,
-      tokenHash,
+      rawRefreshToken,
+      refreshTokenHash,
       expiresAt,
     };
+  }
+
+  generateOpaqueRefreshToken(): GeneratedOpaqueRefreshToken {
+    const rawRefreshToken = randomBytes(
+      TokenService.REFRESH_TOKEN_BYTES,
+    ).toString('base64url');
+
+    return {
+      rawRefreshToken,
+      refreshTokenHash: this.hashRefreshToken(rawRefreshToken),
+    };
+  }
+
+  hashRefreshToken(rawRefreshToken: string): string {
+    return createHash('sha256').update(rawRefreshToken).digest('hex');
   }
 
   generatePasswordResetToken(): PasswordResetTokenGenerated {
-    const rawToken = randomBytes(32).toString('base64url');
-    const tokenHash = this.hashPasswordResetToken(rawToken);
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const rawPasswordResetToken = randomBytes(
+      TokenService.PASSWORD_RESET_TOKEN_BYTES,
+    ).toString('base64url');
+
+    const passwordResetTokenHash = this.hashPasswordResetToken(
+      rawPasswordResetToken,
+    );
+
+    const expiresAt = new Date(
+      Date.now() + TokenService.PASSWORD_RESET_TOKEN_TTL_MS,
+    );
 
     return {
-      rawToken,
-      tokenHash,
+      rawPasswordResetToken,
+      passwordResetTokenHash,
       expiresAt,
     };
   }
 
-  hashPasswordResetToken(rawToken: string): string {
-    return createHash('sha256').update(rawToken).digest('hex');
+  hashPasswordResetToken(rawPasswordResetToken: string): string {
+    return createHash('sha256').update(rawPasswordResetToken).digest('hex');
   }
 }

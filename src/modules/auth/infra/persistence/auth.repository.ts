@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { IAuthRepository } from '../../domain/repositories/auth.repository.interface';
+import {
+  IAuthRepository,
+  RefreshTokenRotation,
+} from '../../domain/repositories/auth.repository.interface';
 import { RefreshToken } from '../../domain/entities/refresh-token';
 import { RefreshTokenMapper } from '../mappers/refresh-token.mapper';
 import { RefreshTokenEntity } from './refresh-token.entity';
@@ -10,6 +13,8 @@ import { PasswordResetTokenEntity } from './password-reset-token.entity';
 import { UserEntity } from '../../../users/infra/persistence/user.entity';
 import { PasswordResetTokenUsedException } from '../../domain/exceptions/password-reset-token-used.exception';
 import { PasswordResetTokenMapper } from '../mappers/password-reset-token.mapper';
+import { IOffsetPaginationQueryRequestDto } from 'shared/domain/pagination/i-offset-pagination.query.request.dto';
+import { IPaginationResponseDto } from 'shared/domain/pagination/i-pagination.response.dto';
 
 @Injectable()
 export class AuthRepository implements IAuthRepository {
@@ -19,10 +24,106 @@ export class AuthRepository implements IAuthRepository {
     @InjectRepository(PasswordResetTokenEntity)
     private readonly passwordResetTokenRepository: Repository<PasswordResetTokenEntity>,
   ) {}
+  findAll(): Promise<RefreshToken[]> {
+    throw new Error('Method not implemented.');
+  }
+
+  findPaginated(
+    options: IOffsetPaginationQueryRequestDto,
+  ): Promise<IPaginationResponseDto<RefreshToken>> {
+    throw new Error('Method not implemented.');
+  }
+
+  async findById(id: Uuid): Promise<RefreshToken | null> {
+    const raw = await this.refreshTokenRepository.findOne({
+      where: { id, isDeleted: false },
+    });
+
+    return raw ? RefreshTokenMapper.toDomain(raw) : null;
+  }
+
+  delete(id: Uuid): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  async save(refreshToken: RefreshToken): Promise<void> {
+    await this.refreshTokenRepository.save(
+      RefreshTokenMapper.toPersistence(refreshToken),
+    );
+  }
 
   async saveRefreshToken(token: RefreshToken): Promise<void> {
-    const raw = RefreshTokenMapper.toPersistence(token);
-    await this.refreshTokenRepository.save(raw);
+    await this.save(token);
+  }
+
+  async rotateRefreshToken(
+    tokenHash: string,
+    successorHash: string,
+    now: Date,
+  ): Promise<RefreshTokenRotation> {
+    return this.refreshTokenRepository.manager.transaction(async (manager) => {
+      // Row lock serialises concurrent refreshes of the same token.
+      const raw = await manager.findOne(RefreshTokenEntity, {
+        where: { tokenHash, isDeleted: false },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!raw) {
+        return { outcome: 'invalid' };
+      }
+
+      const current = RefreshTokenMapper.toDomain(raw);
+      if (current.revokedAt !== null) {
+        await this.revokeFamily(manager, current.familyId, now);
+        return { outcome: 'reused' };
+      }
+      if (!current.isUsable(now)) {
+        return { outcome: 'invalid' };
+      }
+
+      const userExists = await manager.exists(UserEntity, {
+        where: { id: current.userId, isDeleted: false },
+      });
+      if (!userExists) {
+        return { outcome: 'invalid' };
+      }
+
+      await manager.update(RefreshTokenEntity, current.id, { revokedAt: now });
+      await manager.save(
+        RefreshTokenMapper.toPersistence(current.rotate(successorHash, now)),
+      );
+      return { outcome: 'rotated', userId: current.userId };
+    });
+  }
+
+  async revokeRefreshTokenFamily(
+    tokenHash: string,
+    userId: Uuid,
+  ): Promise<void> {
+    const raw = await this.refreshTokenRepository.findOne({
+      where: { tokenHash, userId, isDeleted: false },
+    });
+
+    if (raw) {
+      await this.revokeFamily(
+        this.refreshTokenRepository.manager,
+        raw.familyId,
+        new Date(),
+      );
+    }
+  }
+
+  private async revokeFamily(
+    manager: EntityManager,
+    familyId: Uuid,
+    now: Date,
+  ): Promise<void> {
+    await manager
+      .createQueryBuilder()
+      .update(RefreshTokenEntity)
+      .set({ revokedAt: now })
+      .where('family_id = :familyId', { familyId })
+      .andWhere('revoked_at IS NULL')
+      .execute();
   }
 
   async revokeActiveRefreshTokensByUserId(userId: Uuid): Promise<void> {

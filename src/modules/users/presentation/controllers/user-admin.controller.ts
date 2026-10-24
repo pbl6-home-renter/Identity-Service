@@ -10,7 +10,6 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
@@ -20,12 +19,9 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthenticatedUser } from 'shared/interfaces/authenticated-user.interface';
-import { JwtAuthGuard } from 'shared/guards/jwt-auth.guard';
-import { RolesGuard } from 'shared/guards/roles.guard';
-import { CurrentUser } from 'shared/decorators/current-user.decorator';
+import { CurrentUser, Roles } from 'shared/decorators/auth.decorators';
 import { ResponseCode } from 'shared/decorators/response-code.decorator';
 import { ApiSuccessResponse } from 'shared/decorators/api-success-response.decorator';
-import { Roles } from 'shared/decorators/roles.decorator';
 import { PaginatedResponseDto } from 'shared/presentation/pagination/paginated.response.dto';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { UserRole } from 'shared/domain/enums/user-role.enum';
@@ -48,7 +44,6 @@ import { UserDeleteCommand } from '../../use-case/commands/implements/user-delet
 @ApiTags('User')
 @ApiBearerAuth()
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class UserAdminController {
   constructor(
