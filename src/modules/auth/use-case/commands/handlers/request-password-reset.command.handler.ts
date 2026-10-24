@@ -5,7 +5,7 @@ import { IUserRepository } from '../../../../users/domain/repositories/user.repo
 import { UserStatus } from 'shared/domain/enums/user-status.enum';
 import { AUTH_DI_TOKEN } from '../../../auth.di-token';
 import { IPasswordResetTokenRepository } from '../../../domain/repositories/password-reset-token.repository.interface';
-import { TokenService } from '../../../infra/services/token.service';
+import { ITokenService } from '../../../domain/services/token.service.interface';
 import { RequestPasswordResetCommand } from '../implements/request-password-reset.command';
 import { UserNotFoundException } from 'modules/users/domain/exceptions/user-not-found.exception';
 import { AuthLoginAccountLockedException } from '../../../domain/exceptions/auth-login-account-locked.exception';
@@ -19,7 +19,8 @@ export class RequestPasswordResetCommandHandler implements ICommandHandler<Reque
     private readonly userRepository: IUserRepository,
     @Inject(AUTH_DI_TOKEN.PASSWORD_RESET_TOKEN_REPOSITORY)
     private readonly passwordResetTokenRepository: IPasswordResetTokenRepository,
-    private readonly tokenService: TokenService,
+    @Inject(AUTH_DI_TOKEN.TOKEN_SERVICE)
+    private readonly tokenService: ITokenService,
   ) {}
 
   async execute(command: RequestPasswordResetCommand): Promise<void> {
@@ -36,10 +37,10 @@ export class RequestPasswordResetCommandHandler implements ICommandHandler<Reque
     const generatedToken = this.tokenService.generatePasswordResetToken();
     const passwordResetToken = PasswordResetToken.create({
       userId: user.id,
-      tokenHash: generatedToken.tokenHash,
+      tokenHash: generatedToken.passwordResetTokenHash,
       expiresAt: generatedToken.expiresAt,
     });
     await this.passwordResetTokenRepository.save(passwordResetToken);
-    // TODO: Send generatedToken.rawToken by email.
+    // TODO: Send generatedToken.rawPasswordResetToken by email.
   }
 }

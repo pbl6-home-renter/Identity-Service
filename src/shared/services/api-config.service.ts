@@ -11,6 +11,7 @@ import {
 } from '../configuration/database.config';
 import { OutboxConfig } from '../configuration/outbox.config';
 import { RabbitMqConfig } from '../configuration/rabbitmq.config';
+import { AuthConfig } from '../configuration/auth.config';
 
 @Injectable()
 export class ApiConfigService {
@@ -124,6 +125,18 @@ export class ApiConfigService {
 
   get logLevel(): string {
     return getConfigString(this.configService, 'LOG_LEVEL', 'debug');
+  }
+
+  /** Identity owns the key pair, so it verifies with its own public key instead of JWKS over HTTP. */
+  get auth(): AuthConfig {
+    const { publicKey, issuer, audience } = this.jwt;
+    return {
+      jwksUrl: '',
+      publicKey,
+      issuer,
+      audience,
+      serviceToken: getConfigString(this.configService, 'SERVICE_TOKEN', ''),
+    };
   }
 
   get jwt(): {

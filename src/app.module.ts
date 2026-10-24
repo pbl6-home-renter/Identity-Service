@@ -4,6 +4,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { LoggingExceptionFilter } from './filter/error-handling-exception-filter';
 import { ResponseTransformInterceptor } from './interceptor/response-transform.interceptor';
 import { SharedModule } from './shared/shared.module';
+import { SecurityModule } from './shared/security.module';
 import { HealthModule } from './modules/health/health.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -14,13 +15,13 @@ import { OutboxModule } from './modules/outbox/outbox.module';
   imports: [
     CqrsModule.forRoot(),
     SharedModule,
+    SecurityModule,
     UsersModule,
     AuthModule,
     InboxModule,
     OutboxModule,
     HealthModule,
   ],
-
   providers: [
     {
       provide: APP_FILTER,

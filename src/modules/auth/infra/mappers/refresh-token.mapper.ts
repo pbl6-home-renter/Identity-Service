@@ -6,6 +6,7 @@ export class RefreshTokenMapper {
     return RefreshToken.reconstitute({
       id: refreshToken.id,
       userId: refreshToken.userId,
+      familyId: refreshToken.familyId,
       tokenHash: refreshToken.tokenHash,
       expiresAt: refreshToken.expiresAt,
       revokedAt: refreshToken.revokedAt ?? null,
@@ -19,6 +20,7 @@ export class RefreshTokenMapper {
     const raw = new RefreshTokenEntity();
     raw.id = domain.id;
     raw.userId = domain.userId;
+    raw.familyId = domain.familyId;
     raw.tokenHash = domain.tokenHash;
     raw.expiresAt = domain.expiresAt;
     raw.revokedAt = domain.revokedAt;

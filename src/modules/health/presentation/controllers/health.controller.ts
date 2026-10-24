@@ -1,8 +1,10 @@
 import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ResponseCode } from 'shared/decorators/response-code.decorator';
+import { Public } from 'shared/decorators/auth.decorators';
 
 @ApiTags('Health')
+@Public()
 @Controller('identity/health')
 export class HealthController {
   @Get()

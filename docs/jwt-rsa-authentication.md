@@ -23,6 +23,9 @@ RSA tách riêng quyền ký và quyền xác thực:
 | `iss` | Xác định service phát hành token. |
 | `aud` | Xác định nhóm API được phép nhận token. |
 | `exp` | Thời điểm hết hạn của token. |
+| `sub` | Id người dùng (UUID). |
+| `role` | `tenant` / `landlord` / `admin`. |
+| `status` | `active` / `locked`. Tài khoản bị khóa vẫn đăng nhập được; service chặn chức năng dựa vào claim này. |
 
 ## Luồng xác thực
 
@@ -31,9 +34,29 @@ Client đăng nhập
   -> Identity-Service ký JWT bằng private key
   -> Client gửi JWT đến API Gateway
   -> Gateway đọc kid và lấy key từ /.well-known/jwks.json
-  -> Gateway xác thực chữ ký, algorithm, issuer, audience và expiration
-  -> Gateway chuyển tiếp request đến backend service
+  -> Gateway xác thực chữ ký, algorithm, issuer, audience và expiration (lọc sớm)
+  -> Gateway chuyển tiếp request, giữ nguyên header Authorization
+  -> Backend service tự verify lại token (quyết định cuối) rồi mới phân quyền
 ```
+
+Service **không** tin header `x-user-*` để phân quyền. Lý do và vai trò của
+từng lớp: xem `api-gateway/docs/03-authentication.md`. Identity tự verify bằng
+`JWT_PUBLIC_KEY` của chính nó (không gọi JWKS qua HTTP); guard dùng chung với
+`boilerplate` (`src/shared/security.module.ts`).
+
+## Refresh token
+
+| | |
+| --- | --- |
+| Dạng | Chuỗi ngẫu nhiên 32 byte (base64url), DB chỉ lưu SHA-256 |
+| Thời hạn | 7 ngày (`rememberMe=true`) hoặc 1 ngày |
+| Truyền | Body JSON `{ "refreshToken": "..." }` cho cả web và mobile |
+| Rotation | `POST /api/v1/auth/refresh` revoke token cũ, cấp token mới **cùng `family_id`**, giữ nguyên thời hạn phiên |
+| Reuse detection | Dùng lại token đã bị revoke → revoke cả family, trả `401 TOKEN_REUSED` |
+| Logout | `POST /api/v1/auth/logout` (cần access token) revoke family của token gửi lên, trả `204` |
+
+`role`/`status` của access token mới được đọc lại từ DB, nên khóa/mở khóa có
+hiệu lực ở lần refresh kế tiếp (tối đa 15 phút).
 
 Endpoint JWKS:
 
@@ -82,7 +105,8 @@ JWT_AUDIENCE=rentify-api
 2. Lấy public key tương ứng từ endpoint JWKS.
 3. Cache response JWKS và refresh lại khi gặp `kid` chưa biết.
 4. Kiểm tra thuật toán `RS256`, chữ ký, `iss`, `aud` và `exp`.
-5. Từ chối token nếu thuật toán không được hỗ trợ, không tìm thấy key, claim không hợp lệ hoặc token đã hết hạn.
+5. Kiểm tra claim `sub` là UUID, `role` và `status` hợp lệ.
+6. Từ chối token nếu thuật toán không được hỗ trợ, không tìm thấy key, claim không hợp lệ hoặc token đã hết hạn.
 
 API Gateway và các backend service tuyệt đối không được sử dụng private key.
 

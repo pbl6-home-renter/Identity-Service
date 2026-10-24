@@ -7,8 +7,23 @@ import {
   Post,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ResponseCode } from 'shared/decorators/response-code.decorator';
+import {
+  AllowLocked,
+  CurrentUser,
+  Public,
+} from 'shared/decorators/auth.decorators';
+import { AuthenticatedUser } from 'shared/interfaces/authenticated-user.interface';
+import { AuthRefreshTokenRequestDto } from '../request/auth-refresh-token.request.dto';
+import { AuthRefreshResponseDto } from '../response/auth-refresh.response.dto';
+import { AuthRefreshCommand } from '../../use-case/commands/implements/auth-refresh.command';
+import { AuthLogoutCommand } from '../../use-case/commands/implements/auth-logout.command';
 import { ApiSuccessResponse } from 'shared/decorators/api-success-response.decorator';
 import { AuthRegisterRequestDto } from '../request/auth-register.request.dto';
 import { AuthLoginRequestDto } from '../request/auth-login.request.dto';
@@ -30,6 +45,7 @@ export class AuthController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Post('register')
+  @Public()
   @HttpCode(HttpStatus.CREATED)
   @Header('Location', '/api/v1/me')
   @ResponseCode(AuthResponseCodeConstant.USER_REGISTERED)
@@ -54,6 +70,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ResponseCode(AuthResponseCodeConstant.SESSION_STARTED)
   @ApiOperation({ summary: 'Log in with email or phone number' })
@@ -74,7 +91,47 @@ export class AuthController {
     );
   }
 
+  @Post('refresh')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ResponseCode(AuthResponseCodeConstant.SESSION_REFRESHED)
+  @ApiOperation({
+    summary: 'Rotate the refresh token and issue a new access token',
+  })
+  @ApiSuccessResponse({
+    status: 200,
+    code: AuthResponseCodeConstant.SESSION_REFRESHED,
+    dataDto: AuthRefreshResponseDto,
+    description: 'Session refreshed',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'INVALID_REFRESH_TOKEN or TOKEN_REUSED',
+  })
+  async refresh(
+    @Body() request: AuthRefreshTokenRequestDto,
+  ): Promise<AuthRefreshResponseDto> {
+    return AuthRefreshResponseDto.fromResult(
+      await this.commandBus.execute(AuthRefreshCommand.create(request)),
+    );
+  }
+
+  @Post('logout')
+  @AllowLocked()
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Revoke the refresh token family of this session' })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Logged out' })
+  @ApiResponse({ status: 401, description: 'UNAUTHORIZED' })
+  async logout(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() request: AuthRefreshTokenRequestDto,
+  ): Promise<void> {
+    await this.commandBus.execute(AuthLogoutCommand.create(user.id, request));
+  }
+
   @Post('password-reset-requests')
+  @Public()
   @HttpCode(HttpStatus.ACCEPTED)
   @ResponseCode(AuthResponseCodeConstant.PASSWORD_RESET_REQUESTED)
   @ApiOperation({ summary: 'Request a password reset link' })
@@ -105,6 +162,7 @@ export class AuthController {
   }
 
   @Post('password-resets')
+  @Public()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Reset password using a single-use token' })
   @ApiResponse({

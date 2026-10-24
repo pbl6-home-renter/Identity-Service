@@ -2,10 +2,12 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { createPublicKey } from 'node:crypto';
 import { ApiConfigService } from 'shared/services/api-config.service';
+import { Public } from 'shared/decorators/auth.decorators';
 import { JwkResponseDto } from '../response/jwk.response.dto';
 import { JwksResponseDto } from '../response/jwks.response.dto';
 
 @ApiTags('Discovery')
+@Public()
 @Controller('.well-known')
 export class JwksController {
   constructor(private readonly configService: ApiConfigService) {}
