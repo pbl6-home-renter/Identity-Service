@@ -1,6 +1,6 @@
-import { BaseException } from 'shared/domain/exceptions/base.exception';
+import { DomainException } from 'shared/domain/exceptions/domain.exception';
 
-export class InvalidPhoneException extends BaseException {
+export class InvalidPhoneException extends DomainException {
   constructor(phone: string) {
     super(`Phone "${phone}" is invalid`, 422, 'PHONE_INVALID_FORMAT');
   }

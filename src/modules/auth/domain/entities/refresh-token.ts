@@ -1,6 +1,6 @@
-import { AggregateRoot } from 'shared/domain/entities/aggregate-root';
+import { AggregateRoot } from 'shared/domain/base/aggregate-root';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
-import { generateUuid } from 'utils/uuid.utils';
+import { generateUuid } from 'shared/domain/value-objects/uuid.vo';
 import { RefreshTokenProps } from './refresh-token.props';
 
 export class RefreshToken extends AggregateRoot {

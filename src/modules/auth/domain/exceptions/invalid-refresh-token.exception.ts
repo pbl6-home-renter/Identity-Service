@@ -1,6 +1,6 @@
-import { BaseException } from 'shared/domain/exceptions/base.exception';
+import { DomainException } from 'shared/domain/exceptions/domain.exception';
 
-export class InvalidRefreshTokenException extends BaseException {
+export class InvalidRefreshTokenException extends DomainException {
   constructor() {
     super(
       'Refresh token is unknown, expired or revoked',

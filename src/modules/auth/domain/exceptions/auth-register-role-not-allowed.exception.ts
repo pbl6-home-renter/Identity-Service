@@ -1,6 +1,6 @@
-import { BaseException } from 'shared/domain/exceptions/base.exception';
+import { DomainException } from 'shared/domain/exceptions/domain.exception';
 
-export class AuthRegisterRoleNotAllowedException extends BaseException {
+export class AuthRegisterRoleNotAllowedException extends DomainException {
   constructor(role: string) {
     super(
       `Role "${role}" is not allowed to register`,

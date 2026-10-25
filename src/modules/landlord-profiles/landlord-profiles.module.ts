@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LANDLORD_PROFILES_DI_TOKEN } from './landlord-profiles.di-token';
-import { LandlordProfileEntity } from './infra/persistence/landlord-profile.entity';
-import { LandlordProfileRepository } from './infra/persistence/landlord-profile.repository';
-import { LandlordProfileSoftDeleteEventHandler } from './use-case/events/handlers/landlord-profile-soft-delete.event.handler';
+import { LandlordProfileEntity } from './infrastructure/persistence/landlord-profile.typeorm-entity';
+import { LandlordProfileRepository } from './infrastructure/persistence/landlord-profile.repository';
+import { LandlordProfileSoftDeleteEventHandler } from './application/event-handlers/landlord-profile-soft-delete.event.handler';
 
 const eventHandlers = [LandlordProfileSoftDeleteEventHandler];
 

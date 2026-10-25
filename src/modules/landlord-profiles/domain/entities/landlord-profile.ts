@@ -1,6 +1,6 @@
-import { AggregateRoot } from 'shared/domain/entities/aggregate-root';
+import { AggregateRoot } from 'shared/domain/base/aggregate-root';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
-import { generateUuid } from 'utils/uuid.utils';
+import { generateUuid } from 'shared/domain/value-objects/uuid.vo';
 import { LandlordProfileProps } from './landlord-profile.props';
 import { PayoutAccount } from '../value-objects/payout-account.vo';
 

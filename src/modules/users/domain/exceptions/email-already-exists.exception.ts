@@ -1,6 +1,6 @@
-import { BaseException } from 'shared/domain/exceptions/base.exception';
+import { DomainException } from 'shared/domain/exceptions/domain.exception';
 
-export class EmailAlreadyExistsException extends BaseException {
+export class EmailAlreadyExistsException extends DomainException {
   constructor(email: string) {
     super(`Email "${email}" already exists`, 409, 'DUPLICATE_EMAIL');
   }

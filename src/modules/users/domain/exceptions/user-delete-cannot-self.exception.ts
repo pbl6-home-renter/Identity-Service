@@ -1,6 +1,6 @@
-import { BaseException } from 'shared/domain/exceptions/base.exception';
+import { DomainException } from 'shared/domain/exceptions/domain.exception';
 
-export class UserDeleteCannotSelfException extends BaseException {
+export class UserDeleteCannotSelfException extends DomainException {
   constructor() {
     super(
       'Admin cannot delete their own account',

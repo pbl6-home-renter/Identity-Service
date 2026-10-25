@@ -1,6 +1,6 @@
-import { BaseException } from 'shared/domain/exceptions/base.exception';
+import { DomainException } from 'shared/domain/exceptions/domain.exception';
 
-export class UserChangePasswordInvalidCurrentException extends BaseException {
+export class UserChangePasswordInvalidCurrentException extends DomainException {
   constructor() {
     super(
       'Current password is invalid',

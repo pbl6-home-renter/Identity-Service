@@ -1,6 +1,6 @@
-import { BaseException } from 'shared/domain/exceptions/base.exception';
+import { DomainException } from 'shared/domain/exceptions/domain.exception';
 
-export class UserChangePasswordMismatchException extends BaseException {
+export class UserChangePasswordMismatchException extends DomainException {
   constructor() {
     super(
       'Password confirmation does not match',

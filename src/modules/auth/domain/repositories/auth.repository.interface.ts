@@ -1,13 +1,16 @@
 import { RefreshToken } from '../entities/refresh-token';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
-import { BaseRepository } from 'shared/domain/repositories/base.repository';
 
 export type RefreshTokenRotation =
   | { outcome: 'rotated'; userId: Uuid }
   | { outcome: 'invalid' }
   | { outcome: 'reused' };
 
-export interface IAuthRepository extends BaseRepository<RefreshToken> {
+/**
+ * Refresh-token store. Tokens are revoked, never deleted, so this is not a
+ * `BaseRepository`.
+ */
+export interface IAuthRepository {
   saveRefreshToken(token: RefreshToken): Promise<void>;
 
   /**
