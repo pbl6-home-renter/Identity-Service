@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LandlordProfilesModule } from 'modules/landlord-profiles/landlord-profiles.module';
+import { OutboxModule } from 'modules/outbox/outbox.module';
 import { UserEntity } from './infrastructure/persistence/user.typeorm-entity';
 import { UserRepository } from './infrastructure/persistence/user.repository';
 import { UserQueryService } from './infrastructure/services/user-query.service';
@@ -39,6 +40,7 @@ const queryHandlers = [
     CqrsModule,
     TypeOrmModule.forFeature([UserEntity]),
     LandlordProfilesModule,
+    OutboxModule,
   ],
   controllers: [UserController, UserAdminController],
   providers: [

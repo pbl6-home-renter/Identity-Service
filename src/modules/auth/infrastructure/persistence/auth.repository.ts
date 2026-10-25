@@ -9,9 +9,12 @@ import { RefreshToken } from '../../domain/entities/refresh-token';
 import { RefreshTokenMapper } from './mappers/refresh-token.mapper';
 import { RefreshTokenEntity } from './refresh-token.typeorm-entity';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
+import { TransactionContext } from 'shared/domain/repositories/transaction-context';
+import { withTransaction } from 'shared/infrastructure/database/transaction/typeorm-transaction-context';
 import { PasswordResetTokenEntity } from './password-reset-token.typeorm-entity';
 import { UserEntity } from 'modules/users/infrastructure/persistence/user.typeorm-entity';
 import { PasswordResetTokenUsedException } from '../../domain/exceptions/password-reset-token-used.exception';
+import { PasswordResetTokenInvalidException } from '../../domain/exceptions/password-reset-token-invalid.exception';
 import { PasswordResetTokenMapper } from './mappers/password-reset-token.mapper';
 
 @Injectable()
@@ -23,8 +26,11 @@ export class AuthRepository implements IAuthRepository {
     private readonly passwordResetTokenRepository: Repository<PasswordResetTokenEntity>,
   ) {}
 
-  async saveRefreshToken(token: RefreshToken): Promise<void> {
-    await this.refreshTokenRepository.save(
+  async saveRefreshToken(
+    token: RefreshToken,
+    context?: TransactionContext,
+  ): Promise<void> {
+    await withTransaction(this.refreshTokenRepository, context).save(
       RefreshTokenMapper.toPersistence(token),
     );
   }
@@ -127,11 +133,11 @@ export class AuthRepository implements IAuthRepository {
     await this.passwordResetTokenRepository.manager.transaction(
       async (manager) => {
         const resetToken = await manager.findOne(PasswordResetTokenEntity, {
-          where: { tokenHash, isDeleted: false },
+          where: { tokenHash },
           lock: { mode: 'pessimistic_write' },
         });
         if (!resetToken) {
-          throw new PasswordResetTokenUsedException();
+          throw new PasswordResetTokenInvalidException();
         }
 
         PasswordResetTokenMapper.toDomain(resetToken).assertUsable(new Date());
@@ -146,7 +152,9 @@ export class AuthRepository implements IAuthRepository {
 
         await manager.update(UserEntity, user.id, { password: passwordHash });
         await this.revokeActiveRefreshTokens(manager, user.id);
-        await manager.delete(PasswordResetTokenEntity, { id: resetToken.id });
+        await manager.update(PasswordResetTokenEntity, resetToken.id, {
+          isDeleted: true,
+        });
       },
     );
   }

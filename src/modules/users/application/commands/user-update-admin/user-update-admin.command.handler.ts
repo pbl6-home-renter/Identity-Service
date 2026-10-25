@@ -1,5 +1,10 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { UNIT_OF_WORK_DI_TOKEN } from 'shared/application/di-tokens';
+import { IUnitOfWork } from 'shared/application/ports/unit-of-work.port';
+import { OUTBOX_DI_TOKEN } from 'modules/outbox/outbox.di-token';
+import { OutboxRepository } from 'modules/outbox/domain/repositories/outbox.repository';
+import { OutboxMessage } from 'modules/outbox/domain/entities/outbox-message.entity';
 import { PhoneAlreadyExistsException } from '../../../domain/exceptions/phone-already-exists.exception';
 import { IUserRepository } from '../../../domain/repositories/user.repository.interface';
 import { User } from '../../../domain/entities/user';
@@ -17,6 +22,10 @@ export class UserUpdateAdminCommandHandler implements ICommandHandler<
   constructor(
     @Inject(USERS_DI_TOKEN.REPOSITORY)
     private readonly userRepository: IUserRepository,
+    @Inject(UNIT_OF_WORK_DI_TOKEN)
+    private readonly unitOfWork: IUnitOfWork,
+    @Inject(OUTBOX_DI_TOKEN.REPOSITORY)
+    private readonly outboxRepository: OutboxRepository,
   ) {}
 
   async execute(command: UserUpdateAdminCommand): Promise<User> {
@@ -62,7 +71,17 @@ export class UserUpdateAdminCommandHandler implements ICommandHandler<
       phone,
     });
 
-    await this.userRepository.save(updated);
+    await this.unitOfWork.run(async (context) => {
+      await this.userRepository.save(updated, context);
+
+      await this.outboxRepository.append(
+        updated
+          .pullDomainEvents()
+          .map((event) => OutboxMessage.fromDomainEvent(event)),
+        context,
+      );
+    });
+
     return updated;
   }
 }

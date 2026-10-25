@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
+import { TransactionContext } from 'shared/domain/repositories/transaction-context';
+import { withTransaction } from 'shared/infrastructure/database/transaction/typeorm-transaction-context';
 import { ILandlordProfileRepository } from '../../domain/repositories/landlord-profile.repository.interface';
 import { LandlordProfile } from '../../domain/entities/landlord-profile';
 import { LandlordProfileMapper } from './mappers/landlord-profile.mapper';
@@ -22,12 +24,20 @@ export class LandlordProfileRepository implements ILandlordProfileRepository {
     return raw ? LandlordProfileMapper.toDomain(raw) : null;
   }
 
-  async save(profile: LandlordProfile): Promise<void> {
-    await this.repository.save(LandlordProfileMapper.toPersistence(profile));
+  async save(
+    profile: LandlordProfile,
+    context?: TransactionContext,
+  ): Promise<void> {
+    await withTransaction(this.repository, context).save(
+      LandlordProfileMapper.toPersistence(profile),
+    );
   }
 
-  async softDeleteByUserId(userId: Uuid): Promise<void> {
-    await this.repository.update(
+  async softDeleteByUserId(
+    userId: Uuid,
+    context?: TransactionContext,
+  ): Promise<void> {
+    await withTransaction(this.repository, context).update(
       { userId, isDeleted: false },
       { isDeleted: true },
     );

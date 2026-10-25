@@ -8,6 +8,13 @@ import { UserRole } from 'shared/domain/enums/user-role.enum';
 import { UserStatus } from 'shared/domain/enums/user-status.enum';
 import { UserLockAlreadyLockedException } from '../exceptions/user-lock-already-locked.exception';
 import { UserUnlockNotLockedException } from '../exceptions/user-unlock-not-locked.exception';
+import { UserDeleteAlreadyDeletedException } from '../exceptions/user-delete-already-deleted.exception';
+import { UserRegisteredEvent } from '../events/user-registered.event';
+import { UserUpdatedEvent } from '../events/user-updated.event';
+import { UserLockedEvent } from '../events/user-locked.event';
+import { UserUnlockedEvent } from '../events/user-unlocked.event';
+import { UserDeletedEvent } from '../events/user-deleted.event';
+import { UserPasswordResetRequestedEvent } from '../events/user-password-reset-requested.event';
 
 export class User extends AggregateRoot {
   private constructor(
@@ -45,7 +52,11 @@ export class User extends AggregateRoot {
     }
     this._status = UserStatus.LOCKED;
     this._lockReason = reason;
-    this._lockedAt = new Date();
+    const lockedAt = new Date();
+    this._lockedAt = lockedAt;
+    this.addDomainEvent(
+      new UserLockedEvent(this.id, this.role, this._status, reason, lockedAt),
+    );
   }
 
   unlock(): void {
@@ -55,10 +66,31 @@ export class User extends AggregateRoot {
     this._status = UserStatus.ACTIVE;
     this._lockReason = null;
     this._lockedAt = null;
+    this.addDomainEvent(new UserUnlockedEvent(this.id, this._status));
+  }
+
+  delete(): void {
+    if (this.isDeleted) {
+      throw new UserDeleteAlreadyDeletedException();
+    }
+    this.markAsDeleted();
+    this.addDomainEvent(new UserDeletedEvent(this.id, this.role));
+  }
+
+  requestPasswordReset(rawToken: string, expiresAt: Date): void {
+    this.addDomainEvent(
+      new UserPasswordResetRequestedEvent(
+        this.id,
+        this.email.value,
+        this.name,
+        rawToken,
+        expiresAt,
+      ),
+    );
   }
 
   updateProfile(props: { name?: string; phone?: Phone }): User {
-    return User.reconstitute({
+    const updated = User.reconstitute({
       id: this.id,
       phone: props.phone ?? this.phone,
       email: this.email,
@@ -72,6 +104,30 @@ export class User extends AggregateRoot {
       updatedAt: new Date(),
       isDeleted: this.isDeleted,
     });
+
+    if (updated.name !== this.name || !updated.phone.equals(this.phone)) {
+      updated.addDomainEvent(
+        new UserUpdatedEvent(updated.id, updated.name, updated.phone.value),
+      );
+    }
+    return updated;
+  }
+
+  static register(props: UserProps): User {
+    const user = User.reconstitute(props);
+
+    user.addDomainEvent(
+      new UserRegisteredEvent(
+        user.id,
+        user.name,
+        user.email.value,
+        user.phone.value,
+        user.role,
+        user.status,
+      ),
+    );
+
+    return user;
   }
 
   static create(props: UserProps): User {

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from 'modules/users/users.module';
+import { OutboxModule } from 'modules/outbox/outbox.module';
 import { RefreshTokenEntity } from './infrastructure/persistence/refresh-token.typeorm-entity';
 import { AuthRepository } from './infrastructure/persistence/auth.repository';
 import { AUTH_DI_TOKEN } from './auth.di-token';
@@ -35,6 +36,7 @@ const eventHandlers = [AuthRevokeTokensOnUserEventsHandler];
     CqrsModule,
     TypeOrmModule.forFeature([RefreshTokenEntity, PasswordResetTokenEntity]),
     UsersModule,
+    OutboxModule,
   ],
   controllers: [AuthController, JwksController],
   providers: [
