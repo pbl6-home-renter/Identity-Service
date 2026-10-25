@@ -1,6 +1,6 @@
-import { BaseException } from 'shared/domain/exceptions/base.exception';
+import { DomainException } from 'shared/domain/exceptions/domain.exception';
 
-export class InvalidPayoutAccountException extends BaseException {
+export class InvalidPayoutAccountException extends DomainException {
   constructor(reason: string) {
     super(
       `Payout account is invalid: ${reason}`,

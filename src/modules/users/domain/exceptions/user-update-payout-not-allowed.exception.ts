@@ -1,6 +1,6 @@
-import { BaseException } from 'shared/domain/exceptions/base.exception';
+import { DomainException } from 'shared/domain/exceptions/domain.exception';
 
-export class UserUpdatePayoutNotAllowedException extends BaseException {
+export class UserUpdatePayoutNotAllowedException extends DomainException {
   constructor() {
     super(
       'Payout account is only available to landlord accounts',

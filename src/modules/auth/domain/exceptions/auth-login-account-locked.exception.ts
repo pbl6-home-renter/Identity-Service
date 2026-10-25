@@ -1,6 +1,6 @@
-import { BaseException } from 'shared/domain/exceptions/base.exception';
+import { DomainException } from 'shared/domain/exceptions/domain.exception';
 
-export class AuthLoginAccountLockedException extends BaseException {
+export class AuthLoginAccountLockedException extends DomainException {
   constructor(reason?: string | null) {
     super(
       reason ? `Account is locked: ${reason}` : 'Account is locked',

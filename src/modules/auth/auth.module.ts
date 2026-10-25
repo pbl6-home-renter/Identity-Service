@@ -1,31 +1,32 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsersModule } from '../users/users.module';
-import { RefreshTokenEntity } from './infra/persistence/refresh-token.entity';
-import { AuthRepository } from './infra/persistence/auth.repository';
+import { UsersModule } from 'modules/users/users.module';
+import { RefreshTokenEntity } from './infrastructure/persistence/refresh-token.typeorm-entity';
+import { AuthRepository } from './infrastructure/persistence/auth.repository';
 import { AUTH_DI_TOKEN } from './auth.di-token';
-import { TokenService } from './infra/services/token.service';
-import { AuthRegisterCommandHandler } from './use-case/commands/handlers/auth-register.command.handler';
-import { AuthLoginCommandHandler } from './use-case/commands/handlers/auth-login.command.handler';
-import { AuthController } from './presentation/controllers/auth.controller';
-import { RequestPasswordResetCommandHandler } from './use-case/commands/handlers/request-password-reset.command.handler';
-import { PasswordResetTokenEntity } from './infra/persistence/password-reset-token.entity';
-import { PasswordResetTokenRepository } from './infra/persistence/password-reset-token.repository';
-import { ResetPasswordCommandHandler } from './use-case/commands/handlers/reset-password.command.handler';
-import { JwksController } from './presentation/controllers/jwks.controller';
-import { AuthRefreshCommandHandler } from './use-case/commands/handlers/auth-refresh.command.handler';
-import { AuthLogoutCommandHandler } from './use-case/commands/handlers/auth-logout.command.handler';
+import { TokenService } from './infrastructure/services/token.service';
+import { JwtConfigService } from './infrastructure/config/jwt-config.service';
+import { AuthRegisterCommandHandler } from './application/commands/auth-register/auth-register.command.handler';
+import { AuthLoginCommandHandler } from './application/commands/auth-login/auth-login.command.handler';
+import { AuthController } from './presentation/http/controllers/auth.controller';
+import { PasswordResetRequestCommandHandler } from './application/commands/password-reset-request/password-reset-request.command.handler';
+import { PasswordResetTokenEntity } from './infrastructure/persistence/password-reset-token.typeorm-entity';
+import { PasswordResetTokenRepository } from './infrastructure/persistence/password-reset-token.repository';
+import { PasswordResetConfirmCommandHandler } from './application/commands/password-reset-confirm/password-reset-confirm.command.handler';
+import { JwksController } from './presentation/http/controllers/jwks.controller';
+import { AuthRefreshCommandHandler } from './application/commands/auth-refresh/auth-refresh.command.handler';
+import { AuthLogoutCommandHandler } from './application/commands/auth-logout/auth-logout.command.handler';
 
-import { AuthRevokeTokensOnUserEventsHandler } from './use-case/events/handlers/auth-revoke-tokens-on-user-events.event.handler';
+import { AuthRevokeTokensOnUserEventsHandler } from './application/event-handlers/auth-revoke-tokens-on-user-events.event.handler';
 
 const commandHandlers = [
   AuthRegisterCommandHandler,
   AuthLoginCommandHandler,
   AuthRefreshCommandHandler,
   AuthLogoutCommandHandler,
-  RequestPasswordResetCommandHandler,
-  ResetPasswordCommandHandler,
+  PasswordResetRequestCommandHandler,
+  PasswordResetConfirmCommandHandler,
 ];
 const eventHandlers = [AuthRevokeTokensOnUserEventsHandler];
 
@@ -37,6 +38,7 @@ const eventHandlers = [AuthRevokeTokensOnUserEventsHandler];
   ],
   controllers: [AuthController, JwksController],
   providers: [
+    JwtConfigService,
     TokenService,
     {
       provide: AUTH_DI_TOKEN.TOKEN_SERVICE,

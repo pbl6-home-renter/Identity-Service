@@ -1,6 +1,6 @@
-import { BaseException } from 'shared/domain/exceptions/base.exception';
+import { DomainException } from 'shared/domain/exceptions/domain.exception';
 
-export class UserDeleteAlreadyDeletedException extends BaseException {
+export class UserDeleteAlreadyDeletedException extends DomainException {
   constructor() {
     super('User is already deleted', 409, 'USER_DELETE_ALREADY_DELETED');
   }

@@ -14,7 +14,7 @@ Boilerplate chuẩn doanh nghiệp (Enterprise-ready) tinh gọn và rõ ràng, 
 - **CQRS Pattern (@nestjs/cqrs)**: Tách bạch rõ ràng giữa Commands (Ghi/Sửa/Xóa dữ liệu), Queries (Đọc dữ liệu) và Events (Xử lý sự kiện nội bộ).
 - **Dependency Inversion (DI Tokens)**: Sử dụng Symbol DI Token để đảo ngược phụ thuộc giữa Domain và Infrastructure.
 - **Cơ sở dữ liệu (TypeORM & PostgreSQL)**: Cấu hình Data Source tối ưu, tự động mapping snake_case naming strategy, hỗ trợ Migration và Database Seeding (`typeorm-extension`).
-- **Global Exception Filter chuẩn Clean Architecture**: Tự động nhận diện Domain Exception (`BaseException`), NestJS `HttpException`, và Validation errors để map HTTP status code chuẩn xác (404, 409, 400...).
+- **Global Exception Filter chuẩn Clean Architecture**: Tự động nhận diện Domain Exception (`DomainException`), NestJS `HttpException`, và Validation errors để map HTTP status code chuẩn xác (404, 409, 400...).
 - **Tài liệu API tự động (Swagger/OpenAPI)**: Tự động sinh tài liệu API trực quan tại `/api/v1/identity/swagger` (JSON: `/api/v1/identity/swagger/json`). Health check: `/api/v1/identity/health`.
 - **Bộ khung thuần khiết (Pure Skeleton)**: Không chứa logic nghiệp vụ dư thừa, dễ dàng sao chép và mở rộng cho bất kỳ dự án nào.
 
@@ -26,52 +26,43 @@ Boilerplate chuẩn doanh nghiệp (Enterprise-ready) tinh gọn và rõ ràng, 
 Identity-Service/
 ├── .github/workflows/              # CI/CD và Supabase database keepalive
 ├── .env.example                    # Biến môi trường mẫu
-├── docker-compose.yml              # Chạy backend container (DB dùng Supabase)
-└── backend/
-    ├── Dockerfile                  # Multi-stage Docker build
-    ├── start.sh                    # Script chạy migration -> start app
-    ├── package.json
-    ├── scripts/                    # Keepalive cho Supabase
-    ├── tsconfig.json
-    └── src/
-        ├── main.ts                 # Bootstrap REST API & Swagger
-        ├── app.module.ts           # Root module
-        │
-        ├── filter/                 # Exception filters (LoggingExceptionFilter)
-        ├── utils/                  # Tiện ích chung (UUID crypto)
-        │
-        ├── shared/                 # Core dùng chung cho toàn bộ ứng dụng
-        │   ├── shared.module.ts    # Global Module
-        │   ├── configuration/      # Config Swagger, Logging, Naming Strategy
-        │           ├── services/           # API and database configuration services
-        │   ├── domain/             # Base Entity, Base Repo, Base Exception, VOs
-        │   └── infra/              # TypeORM setup & config
-        │
-        └── modules/
-            └── sample/             # [MODULE KHUNG MẪU] Skeleton tham chiếu chuẩn
-                ├── sample.di-token.ts
-                ├── sample.module.ts
-                ├── domain/
-                │   ├── entities/sample.entity.ts
-                │   ├── repositories/sample.repository.ts
-                │   └── exceptions/sample-not-found.exception.ts
-                ├── use-case/
-                │   ├── commands/
-                │   │   ├── create-sample.command.ts
-                │   │   └── create-sample.command.handler.ts
-                │   └── queries/
-                │       ├── get-sample-by-id.query.ts
-                │       └── get-sample-by-id.query.handler.ts
-                ├── infra/
-                │   ├── persistence/
-                │   │   ├── sample.typeorm-entity.ts
-                │   │   └── sample.repository.ts
-                │   └── mappers/sample.mapper.ts
-                └── presentation/
-                    ├── controllers/sample.controller.ts
-                    ├── request/create-sample.request.ts
-                    └── response/sample.response.dto.ts
+├── Dockerfile                      # Multi-stage Docker build
+├── start.sh                        # Script chạy migration -> start app
+├── scripts/                        # Keepalive cho Supabase
+├── docs/
+│   ├── architecture.md             # Quy ước Clean Architecture + DDD (chung với boilerplate)
+│   └── jwt-rsa-authentication.md
+└── src/
+    ├── main.ts                     # Bootstrap REST API & Swagger
+    ├── app.module.ts               # Root module
+    ├── config/service.constants.ts # ServiceConstants: PATH = identity, tên Swagger, DB mặc định
+    ├── database/migrations/
+    ├── shared/                     # Bản copy y hệt boilerplate — KHÔNG sửa riêng ở đây
+    │   ├── domain/                 # BaseEntity, AggregateRoot, DomainException, Uuid, UserRole/UserStatus
+    │   ├── application/            # Port (UnitOfWork, publisher), phân trang, AuthenticatedUser
+    │   ├── infrastructure/         # Config, TypeORM, RabbitMQ, verify access token
+    │   └── presentation/           # Guard, decorator, validator, filter/interceptor/pipe/middleware HTTP
+    └── modules/
+        ├── auth/                   # Đăng ký, đăng nhập, refresh/logout, reset mật khẩu, JWKS
+        │   ├── domain/             # RefreshToken, PasswordResetToken, repository interface
+        │   ├── application/
+        │   │   ├── commands/       # auth-login/, auth-register/, password-reset-request/, …
+        │   │   ├── event-handlers/ # Thu hồi token khi user bị khoá/xoá/đổi mật khẩu
+        │   │   └── ports/          # ITokenService
+        │   ├── infrastructure/     # persistence/, services/token.service.ts, config/jwt-config.service.ts
+        │   └── presentation/http/  # controllers/, requests/, responses/, constants/
+        ├── users/                  # Hồ sơ cá nhân + quản trị user
+        │   ├── domain/             # User, Email, Phone, domain events
+        │   ├── application/        # commands/, queries/, ports/ (IUserQueryService, IPasswordHasher)
+        │   ├── infrastructure/     # persistence/, services/ (UserQueryService, BcryptPasswordHasher), seeds/admin.seeder.ts
+        │   └── presentation/http/
+        ├── landlord-profiles/      # Hồ sơ chủ trọ (payout account)
+        ├── outbox/, inbox/         # Transactional outbox / consumer dedup (giống boilerplate)
+        └── health/
 ```
+
+Quy ước tầng, đặt tên use case (`<noun>-<verb>`) và cách đồng bộ `shared/` từ boilerplate:
+[`docs/architecture.md`](docs/architecture.md).
 
 ---
 
@@ -81,21 +72,22 @@ Identity-Service/
 sequenceDiagram
     autonumber
     actor Client
-    participant Controller as SampleController (Presentation)
+    participant Controller as UserAdminController (Presentation)
     participant CommandBus as CommandBus (CQRS)
-    participant Handler as CreateSampleCommandHandler
-    participant Domain as SampleEntity (Domain)
-    participant Repo as SampleRepository (Infra)
+    participant Handler as UserLockCommandHandler (Application)
+    participant Domain as User (Domain)
+    participant Repo as UserRepository (Infrastructure)
     participant DB as Supabase PostgreSQL
 
-    Client->>Controller: POST /api/v1/samples (CreateSampleRequest)
-    Controller->>CommandBus: execute(new CreateSampleCommand(...))
+    Client->>Controller: POST /api/v1/users/:userId/lock (UserLockRequestDto)
+    Controller->>CommandBus: execute(UserLockCommand.create(adminId, userId, body))
     CommandBus->>Handler: execute(command)
-    Handler->>Domain: SampleEntity.create(props)
-    Handler->>Repo: save(sample)
-    Repo->>DB: INSERT INTO samples
-    Handler-->>Controller: Return Domain SampleEntity
-    Controller-->>Client: 201 Created (SampleResponseDto)
+    Handler->>Repo: findById(userId)
+    Handler->>Domain: user.lock(reason)
+    Handler->>Repo: save(user)
+    Repo->>DB: UPDATE users
+    Handler-->>Controller: User
+    Controller-->>Client: 200 OK (UserLockResponseDto)
 ```
 
 ---
@@ -151,59 +143,9 @@ GitHub Actions keepalive chạy theo lịch mỗi ngày. Thêm secret `SUPABASE_
 
 ## 📋 Hướng dẫn thêm Module mới chuẩn Clean Architecture & CQRS
 
-Khi bạn muốn thêm một tính năng/domain mới (ví dụ `products`):
-
-### Bước 1: Tạo cấu trúc thư mục
-Tạo thư mục `src/modules/products/` với các thư mục con:
-- `domain/`: `entities/`, `repositories/`, `exceptions/`
-- `use-case/`: `commands/`, `queries/`
-- `infra/`: `persistence/`, `mappers/`
-- `presentation/`: `controllers/`, `request/`, `response/`
-
-### Bước 2: Định nghĩa DI Token
-Tạo `products/product.di-token.ts`:
-```typescript
-export const PRODUCT_DI_TOKEN = {
-  REPOSITORY: Symbol("PRODUCT_REPOSITORY"),
-} as const;
-```
-
-### Bước 3: Xây dựng Domain Model & Repository Interface
-1. Tạo Entity kế thừa `BaseEntity` tại `domain/entities/product.entity.ts`.
-2. Tạo interface `ProductRepository` kế thừa `BaseRepository<ProductEntity>` tại `domain/repositories/product.repository.ts`.
-
-### Bước 4: Tạo Tầng Hạ Tầng (Infrastructure)
-1. Tạo TypeORM entity kế thừa `AbstractEntity` tại `infra/persistence/product.typeorm-entity.ts`.
-2. Tạo mapper chuyển đổi 2 chiều giữa Domain Entity và TypeORM Entity tại `infra/mappers/product.mapper.ts`.
-3. Tạo repository class triển khai interface `ProductRepository` tại `infra/persistence/product.repository.ts`.
-
-### Bước 5: Viết Use Cases (CQRS)
-1. **Command**: Tạo `CreateProductCommand` và `CreateProductCommandHandler`.
-2. **Query**: Tạo `GetProductByIdQuery` và `GetProductByIdQueryHandler`.
-
-### Bước 6: Xây dựng Presentation Layer
-1. Tạo DTOs validation tại `presentation/request/` và `presentation/response/`.
-2. Tạo Controller inject `CommandBus` và `QueryBus` tại `presentation/controllers/product.controller.ts`.
-
-### Bước 7: Khai báo Module
-Tạo `products.module.ts`:
-```typescript
-@Module({
-  imports: [CqrsModule, TypeOrmModule.forFeature([ProductTypeormEntity])],
-  controllers: [ProductController],
-  providers: [
-    {
-      provide: PRODUCT_DI_TOKEN.REPOSITORY,
-      useClass: TypeOrmProductRepository,
-    },
-    ...commandHandlers,
-    ...queryHandlers,
-  ],
-  exports: [PRODUCT_DI_TOKEN.REPOSITORY],
-})
-export class ProductsModule {}
-```
-Cuối cùng, import `ProductsModule` vào `app.module.ts`.
+Xem [`docs/architecture.md`](docs/architecture.md) mục 4–5 (layout module, quy ước đặt tên
+`<noun>-<verb>`, các bước tạo domain → repository → use case → controller → module).
+Module `users` là ví dụ đầy đủ nhất trong service này.
 
 ---
 

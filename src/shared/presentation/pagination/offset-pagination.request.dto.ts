@@ -3,16 +3,19 @@ import { Type } from 'class-transformer';
 import {
   IsIn,
   IsInt,
+  IsObject,
   IsOptional,
   IsString,
   Matches,
   Max,
   Min,
 } from 'class-validator';
-import { IOffsetPaginationQueryRequestDto } from '../../domain/pagination/i-offset-pagination.query.request.dto';
-import { SortOrder } from '../../domain/value-objects/sort-order.vo';
+import { OffsetPageQuery } from 'shared/application/pagination/offset-page-query';
+import { SortOrder } from 'shared/domain/value-objects/sort-order.vo';
 
-export class OffsetPaginationQueryRequestDto implements IOffsetPaginationQueryRequestDto {
+export class OffsetPaginationQueryRequestDto<
+  TFilter = Record<string, unknown>,
+> implements OffsetPageQuery<TFilter> {
   @ApiPropertyOptional({
     description: 'Số nguyên dương, bắt đầu từ 1',
     default: 1,
@@ -50,13 +53,22 @@ export class OffsetPaginationQueryRequestDto implements IOffsetPaginationQueryRe
   sort?: string;
 
   @ApiPropertyOptional({
-    description: 'Thứ tự sắp xếp: asc hoặc desc (chỉ áp dụng cho sort)',
+    description:
+      'Thứ tự sắp xếp: asc hoặc desc. Bỏ trống thì dùng thứ tự mặc định của endpoint.',
     enum: ['asc', 'desc'],
-    default: 'desc',
   })
   @IsOptional()
   @IsIn(['asc', 'desc'], {
     message: 'order must be either asc or desc',
   })
-  order?: SortOrder = 'desc';
+  order?: SortOrder;
+
+  @ApiPropertyOptional({
+    description:
+      'Object có field được endpoint cho phép, serialized theo OpenAPI deepObject (ví dụ: filter[status]=available)',
+    type: Object,
+  })
+  @IsOptional()
+  @IsObject({ message: 'filter must be an object' })
+  filter?: TFilter;
 }
