@@ -1,4 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { createPublicKey } from 'node:crypto';
 import { JwtConfigService } from '../../../infrastructure/config/jwt-config.service';
@@ -16,19 +17,19 @@ export class JwksController {
   @ApiOperation({
     summary: 'Get public keys for JWT signature verification',
     description:
-      'Returns public RSA keys. The API Gateway and backend services use this endpoint to verify tokens issued by Identity-Service.',
+      'Returns public RSA keys as a bare RFC 7517 JWK Set (no response envelope). The API Gateway and backend services use this endpoint to verify tokens issued by Identity-Service.',
   })
   @ApiResponse({
     status: 200,
     type: JwksResponseDto,
     description: 'Public RSA keys used to verify Identity-Service JWTs.',
   })
-  getJwks(): JwksResponseDto {
+  getJwks(@Res() res: Response): void {
     const publicJwk = createPublicKey(this.jwtConfig.publicKey).export({
       format: 'jwk',
     }) as Pick<JwkResponseDto, 'kty' | 'n' | 'e'>;
 
-    return JwksResponseDto.create([
+    const jwks = JwksResponseDto.create([
       JwkResponseDto.create(
         publicJwk.kty,
         publicJwk.n,
@@ -38,5 +39,6 @@ export class JwksController {
         this.jwtConfig.keyId,
       ),
     ]);
+    res.json(jwks);
   }
 }

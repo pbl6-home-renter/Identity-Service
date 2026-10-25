@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { PostgresErrorCode } from 'shared/infrastructure/database/postgres-error-code';
+import { TransactionContext } from 'shared/domain/repositories/transaction-context';
+import { withTransaction } from 'shared/infrastructure/database/transaction/typeorm-transaction-context';
 import { EmailAlreadyExistsException } from '../../domain/exceptions/email-already-exists.exception';
 import { PhoneAlreadyExistsException } from '../../domain/exceptions/phone-already-exists.exception';
 import { User } from '../../domain/entities/user';
@@ -21,10 +23,10 @@ export class UserRepository implements IUserRepository {
     private readonly repository: Repository<UserEntity>,
   ) {}
 
-  async save(user: User): Promise<void> {
+  async save(user: User, context?: TransactionContext): Promise<void> {
     try {
       const raw = UserMapper.toPersistence(user);
-      await this.repository.save(raw);
+      await withTransaction(this.repository, context).save(raw);
     } catch (error) {
       const pgError = (
         error as {
@@ -52,8 +54,12 @@ export class UserRepository implements IUserRepository {
     }
   }
 
-  async updatePassword(userId: Uuid, newHashedPassword: string): Promise<void> {
-    await this.repository.update(userId, {
+  async updatePassword(
+    userId: Uuid,
+    newHashedPassword: string,
+    context?: TransactionContext,
+  ): Promise<void> {
+    await withTransaction(this.repository, context).update(userId, {
       password: newHashedPassword,
     });
   }
@@ -66,6 +72,11 @@ export class UserRepository implements IUserRepository {
       return null;
     }
     return UserMapper.toDomain(raw);
+  }
+
+  async findByIdIncludingDeleted(id: Uuid): Promise<User | null> {
+    const raw = await this.repository.findOne({ where: { id } });
+    return raw ? UserMapper.toDomain(raw) : null;
   }
 
   async findByEmail(email: Email): Promise<User | null> {
@@ -88,14 +99,15 @@ export class UserRepository implements IUserRepository {
     return UserMapper.toDomain(raw);
   }
 
-  async delete(id: Uuid): Promise<void> {
-    const user = await this.repository.findOne({
+  async delete(id: Uuid, context?: TransactionContext): Promise<void> {
+    const repository = withTransaction(this.repository, context);
+    const user = await repository.findOne({
       where: { id },
     });
     if (!user) throw new UserNotFoundException();
     if (user.isDeleted) throw new UserDeleteAlreadyDeletedException();
 
-    await this.repository.update(id, {
+    await repository.update(id, {
       isDeleted: true,
     });
   }

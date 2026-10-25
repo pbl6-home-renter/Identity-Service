@@ -35,7 +35,6 @@ import { RequestPasswordResetRequestDto } from '../requests/request-password-res
 import { RequestPasswordResetResponseDto } from '../responses/request-password-reset.response.dto';
 import { PasswordResetRequestCommand } from '../../../application/commands/password-reset-request/password-reset-request.command';
 import { UserNotFoundException } from 'modules/users/domain/exceptions/user-not-found.exception';
-import { AuthLoginAccountLockedException } from '../../../domain/exceptions/auth-login-account-locked.exception';
 import { ResetPasswordRequestDto } from '../requests/reset-password.request.dto';
 import { PasswordResetConfirmCommand } from '../../../application/commands/password-reset-confirm/password-reset-confirm.command';
 
@@ -151,10 +150,8 @@ export class AuthController {
       );
       return RequestPasswordResetResponseDto.create(true);
     } catch (error) {
-      if (
-        error instanceof UserNotFoundException ||
-        error instanceof AuthLoginAccountLockedException
-      ) {
+      // Same 202 whether or not the email exists, so accounts cannot be probed.
+      if (error instanceof UserNotFoundException) {
         return RequestPasswordResetResponseDto.create(true);
       }
       throw error;

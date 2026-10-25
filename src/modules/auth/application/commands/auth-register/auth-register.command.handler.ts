@@ -17,6 +17,12 @@ import { RefreshToken } from '../../../domain/entities/refresh-token';
 import { EmailAlreadyExistsException } from 'modules/users/domain/exceptions/email-already-exists.exception';
 import { PhoneAlreadyExistsException } from 'modules/users/domain/exceptions/phone-already-exists.exception';
 import { AuthRegisterRoleNotAllowedException } from '../../../domain/exceptions/auth-register-role-not-allowed.exception';
+import { UNIT_OF_WORK_DI_TOKEN } from 'shared/application/di-tokens';
+import { IUnitOfWork } from 'shared/application/ports/unit-of-work.port';
+import { TransactionContext } from 'shared/domain/repositories/transaction-context';
+import { OUTBOX_DI_TOKEN } from 'modules/outbox/outbox.di-token';
+import { OutboxRepository } from 'modules/outbox/domain/repositories/outbox.repository';
+import { OutboxMessage } from 'modules/outbox/domain/entities/outbox-message.entity';
 
 @CommandHandler(AuthRegisterCommand)
 export class AuthRegisterCommandHandler implements ICommandHandler<
@@ -32,6 +38,10 @@ export class AuthRegisterCommandHandler implements ICommandHandler<
     private readonly authRepository: IAuthRepository,
     @Inject(AUTH_DI_TOKEN.TOKEN_SERVICE)
     private readonly tokenService: ITokenService,
+    @Inject(UNIT_OF_WORK_DI_TOKEN)
+    private readonly unitOfWork: IUnitOfWork,
+    @Inject(OUTBOX_DI_TOKEN.REPOSITORY)
+    private readonly outboxRepository: OutboxRepository,
   ) {}
 
   async execute(command: AuthRegisterCommand): Promise<AuthResult> {
@@ -40,8 +50,28 @@ export class AuthRegisterCommandHandler implements ICommandHandler<
     const phone = Phone.create(command.phone);
     await this.validateUniqueCredentials(email, phone);
 
-    const user = await this.createUser(command, email, phone);
-    const { accessToken, rawRefreshToken } = await this.issueTokens(user);
+    const user = await this.buildUser(command, email, phone);
+    const { rawRefreshToken, refreshTokenHash, expiresAt } =
+      this.tokenService.generateRefreshToken(true);
+
+    await this.unitOfWork.run(async (context) => {
+      await this.userRepository.save(user, context);
+
+      await this.saveRefreshToken(user, refreshTokenHash, expiresAt, context);
+
+      await this.outboxRepository.append(
+        user
+          .pullDomainEvents()
+          .map((event) => OutboxMessage.fromDomainEvent(event)),
+        context,
+      );
+    });
+
+    const accessToken = await this.tokenService.generateAccessToken(
+      user.id,
+      user.role,
+      user.status,
+    );
 
     return AuthResult.create(accessToken, rawRefreshToken, user);
   }
@@ -67,14 +97,14 @@ export class AuthRegisterCommandHandler implements ICommandHandler<
     }
   }
 
-  private async createUser(
+  private async buildUser(
     command: AuthRegisterCommand,
     email: Email,
     phone: Phone,
   ): Promise<User> {
     const hashedPassword = await this.passwordHasher.hash(command.password);
 
-    const user = User.create({
+    return User.register({
       name: command.name,
       email,
       phone,
@@ -84,30 +114,21 @@ export class AuthRegisterCommandHandler implements ICommandHandler<
       lockReason: null,
       lockedAt: null,
     });
-
-    await this.userRepository.save(user);
-    return user;
   }
 
-  private async issueTokens(
+  private async saveRefreshToken(
     user: User,
-  ): Promise<{ accessToken: string; rawRefreshToken: string }> {
-    const { rawRefreshToken, refreshTokenHash, expiresAt } =
-      this.tokenService.generateRefreshToken(true);
-
+    tokenHash: string,
+    expiresAt: Date,
+    context: TransactionContext,
+  ): Promise<void> {
     const refreshToken = RefreshToken.create({
       userId: user.id,
-      tokenHash: refreshTokenHash,
+      tokenHash,
       expiresAt,
       revokedAt: null,
     });
 
-    await this.authRepository.saveRefreshToken(refreshToken);
-    const accessToken = await this.tokenService.generateAccessToken(
-      user.id,
-      user.role,
-      user.status,
-    );
-    return { accessToken, rawRefreshToken };
+    await this.authRepository.saveRefreshToken(refreshToken, context);
   }
 }

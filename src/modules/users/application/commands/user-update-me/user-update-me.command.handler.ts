@@ -14,6 +14,13 @@ import { USERS_DI_TOKEN } from '../../../users.di-token';
 import { CurrentUserProfileResult } from '../../results/current-user-profile.result';
 import { UserUpdateMeCommand } from './user-update-me.command';
 import { Phone } from '../../../domain/value-objects/phone.vo';
+import { UNIT_OF_WORK_DI_TOKEN } from 'shared/application/di-tokens';
+import { IUnitOfWork } from 'shared/application/ports/unit-of-work.port';
+import { TransactionContext } from 'shared/domain/repositories/transaction-context';
+import { DomainEvent } from 'shared/domain/base/domain-event';
+import { OUTBOX_DI_TOKEN } from 'modules/outbox/outbox.di-token';
+import { OutboxRepository } from 'modules/outbox/domain/repositories/outbox.repository';
+import { OutboxMessage } from 'modules/outbox/domain/entities/outbox-message.entity';
 
 @CommandHandler(UserUpdateMeCommand)
 export class UserUpdateMeCommandHandler implements ICommandHandler<
@@ -25,6 +32,10 @@ export class UserUpdateMeCommandHandler implements ICommandHandler<
     private readonly userRepository: IUserRepository,
     @Inject(LANDLORD_PROFILES_DI_TOKEN.REPOSITORY)
     private readonly landlordProfileRepository: ILandlordProfileRepository,
+    @Inject(UNIT_OF_WORK_DI_TOKEN)
+    private readonly unitOfWork: IUnitOfWork,
+    @Inject(OUTBOX_DI_TOKEN.REPOSITORY)
+    private readonly outboxRepository: OutboxRepository,
   ) {}
 
   async execute(
@@ -32,11 +43,30 @@ export class UserUpdateMeCommandHandler implements ICommandHandler<
   ): Promise<CurrentUserProfileResult> {
     const phone = command.phone ? Phone.create(command.phone) : undefined;
     const user = await this.findAndValidateUser(command, phone);
-    const updatedUser = await this.updateUserBasicInfo(user, command, phone);
-    const payoutAccount = await this.handleLandlordPayout(
-      user,
+    const updatedUser = user.updateProfile({ name: command.name, phone });
+    const profile = await this.buildLandlordProfile(
+      updatedUser,
       command.payoutAccount,
     );
+
+    await this.unitOfWork.run(async (context) => {
+      await this.userRepository.save(updatedUser, context);
+      if (profile) {
+        await this.landlordProfileRepository.save(profile, context);
+      }
+
+      await this.appendEvents(
+        [
+          ...updatedUser.pullDomainEvents(),
+          ...(profile?.pullDomainEvents() ?? []),
+        ],
+        context,
+      );
+    });
+
+    const payoutAccount = profile
+      ? profile.payoutAccount
+      : await this.currentPayoutAccount(updatedUser);
 
     return CurrentUserProfileResult.create(updatedUser, payoutAccount);
   }
@@ -64,45 +94,37 @@ export class UserUpdateMeCommandHandler implements ICommandHandler<
     return user;
   }
 
-  private async updateUserBasicInfo(
+  /** Only built when a landlord sends `payoutAccount`; otherwise nothing is upserted. */
+  private async buildLandlordProfile(
     user: User,
-    command: UserUpdateMeCommand,
-    phone: Phone | undefined,
-  ): Promise<User> {
-    const updated = user.updateProfile({
-      name: command.name,
-      phone,
-    });
+    payoutAccount?: PayoutAccount | null,
+  ): Promise<LandlordProfile | null> {
+    if (user.role !== UserRole.LANDLORD || payoutAccount === undefined) {
+      return null;
+    }
 
-    await this.userRepository.save(updated);
-    return updated;
+    const existing = await this.landlordProfileRepository.findByUserId(user.id);
+    return LandlordProfile.withPayoutAccount(existing, user.id, payoutAccount);
   }
 
-  private async handleLandlordPayout(
+  private async currentPayoutAccount(
     user: User,
-    payoutAccountDto?: PayoutAccount | null,
   ): Promise<PayoutAccount | null> {
     if (user.role !== UserRole.LANDLORD) {
       return null;
     }
 
-    const existingProfile = await this.landlordProfileRepository.findByUserId(
-      user.id,
+    const profile = await this.landlordProfileRepository.findByUserId(user.id);
+    return profile?.payoutAccount ?? null;
+  }
+
+  private async appendEvents(
+    events: DomainEvent[],
+    context: TransactionContext,
+  ): Promise<void> {
+    await this.outboxRepository.append(
+      events.map((event) => OutboxMessage.fromDomainEvent(event)),
+      context,
     );
-
-    if (payoutAccountDto !== undefined) {
-      const profileToSave = LandlordProfile.create({
-        id: existingProfile?.id,
-        userId: user.id,
-        payoutAccount: payoutAccountDto,
-        createdAt: existingProfile?.createdAt,
-        updatedAt: new Date(),
-        isDeleted: existingProfile?.isDeleted ?? false,
-      });
-      await this.landlordProfileRepository.save(profileToSave);
-      return payoutAccountDto ?? null;
-    }
-
-    return existingProfile?.payoutAccount ?? null;
   }
 }

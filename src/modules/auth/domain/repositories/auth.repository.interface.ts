@@ -1,5 +1,6 @@
 import { RefreshToken } from '../entities/refresh-token';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
+import { TransactionContext } from 'shared/domain/repositories/transaction-context';
 
 export type RefreshTokenRotation =
   | { outcome: 'rotated'; userId: Uuid }
@@ -11,7 +12,10 @@ export type RefreshTokenRotation =
  * `BaseRepository`.
  */
 export interface IAuthRepository {
-  saveRefreshToken(token: RefreshToken): Promise<void>;
+  saveRefreshToken(
+    token: RefreshToken,
+    context?: TransactionContext,
+  ): Promise<void>;
 
   /**
    * Atomically revokes the active token matching `tokenHash` and stores its
