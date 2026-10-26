@@ -5,15 +5,15 @@ export class UserDetailResult {
   constructor(
     readonly user: User,
     readonly payoutAccount: PayoutAccount | null,
-    readonly buildingCount: number = 0,
-    readonly activeContractCount: number = 0,
+    readonly buildingCount: number | null,
+    readonly activeContractCount: number | null,
   ) {}
 
   static create(
     user: User,
     payoutAccount: PayoutAccount | null,
-    buildingCount: number = 0,
-    activeContractCount: number = 0,
+    buildingCount: number | null,
+    activeContractCount: number | null,
   ): UserDetailResult {
     return new UserDetailResult(
       user,

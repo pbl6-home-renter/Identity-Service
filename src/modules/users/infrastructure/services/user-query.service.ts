@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { OffsetPageQuery } from 'shared/application/pagination/offset-page-query';
 import { PaginatedResult } from 'shared/application/pagination/paginated-result';
@@ -43,6 +43,14 @@ export class UserQueryService implements IUserQueryService {
         ? LandlordProfileMapper.toDomain(raw.landlordProfile)
         : null,
     };
+  }
+
+  async findByIdsIncludingDeleted(ids: Uuid[]): Promise<User[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    const raws = await this.repository.find({ where: { id: In(ids) } });
+    return raws.map((raw) => UserMapper.toDomain(raw));
   }
 
   async findUsersAdmin(

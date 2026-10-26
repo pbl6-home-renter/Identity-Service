@@ -19,6 +19,9 @@ import { UserUpdateAdminCommandHandler } from './application/commands/user-updat
 import { UserLockCommandHandler } from './application/commands/user-lock/user-lock.command.handler';
 import { UserUnlockCommandHandler } from './application/commands/user-unlock/user-unlock.command.handler';
 import { UserDeleteCommandHandler } from './application/commands/user-delete/user-delete.command.handler';
+import { UserLookupInternalQueryHandler } from './application/queries/user-lookup-internal/user-lookup-internal.query.handler';
+import { UserInternalController } from './presentation/http/controllers/user-internal.controller';
+import { TenancyUserStatsService } from './infrastructure/services/tenancy-user-stats.service';
 
 const commandHandlers = [
   UserUpdateMeCommandHandler,
@@ -33,6 +36,7 @@ const queryHandlers = [
   UserGetMeQueryHandler,
   UserListAdminQueryHandler,
   UserGetDetailAdminQueryHandler,
+  UserLookupInternalQueryHandler,
 ];
 
 @Module({
@@ -42,7 +46,7 @@ const queryHandlers = [
     LandlordProfilesModule,
     OutboxModule,
   ],
-  controllers: [UserController, UserAdminController],
+  controllers: [UserController, UserAdminController, UserInternalController],
   providers: [
     {
       provide: USERS_DI_TOKEN.REPOSITORY,
@@ -55,6 +59,10 @@ const queryHandlers = [
     {
       provide: USERS_DI_TOKEN.PASSWORD_HASHER,
       useClass: BcryptPasswordHasher,
+    },
+    {
+      provide: USERS_DI_TOKEN.TENANCY_USER_STATS,
+      useClass: TenancyUserStatsService,
     },
     ...commandHandlers,
     ...queryHandlers,

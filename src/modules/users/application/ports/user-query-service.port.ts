@@ -7,6 +7,9 @@ import { GetUsersAdminFilterModel } from '../queries/models/get-users-admin-filt
 
 export interface IUserQueryService {
   findByUserId(userId: Uuid): Promise<GetMeUserModel | null>;
+
+  findByIdsIncludingDeleted(userIds: Uuid[]): Promise<User[]>;
+
   findUsersAdmin(
     options: OffsetPageQuery<GetUsersAdminFilterModel>,
   ): Promise<PaginatedResult<User>>;
