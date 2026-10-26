@@ -40,11 +40,21 @@ export class UserGetDetailAdminResponseDto {
   @ApiProperty({ type: PayoutAccountResponseDto, nullable: true })
   payoutAccount: PayoutAccountResponseDto | null;
 
-  @ApiProperty({ example: 0, default: 0 })
-  buildingCount: number;
+  @ApiProperty({
+    type: Number,
+    example: 0,
+    nullable: true,
+    description: 'From Tenancy-Service; null when it is unavailable',
+  })
+  buildingCount: number | null;
 
-  @ApiProperty({ example: 1, default: 0 })
-  activeContractCount: number;
+  @ApiProperty({
+    type: Number,
+    example: 1,
+    nullable: true,
+    description: 'From Tenancy-Service; null when it is unavailable',
+  })
+  activeContractCount: number | null;
 
   static fromResult(result: UserDetailResult): UserGetDetailAdminResponseDto {
     const dto = new UserGetDetailAdminResponseDto();
@@ -59,8 +69,8 @@ export class UserGetDetailAdminResponseDto {
     dto.payoutAccount = result.payoutAccount
       ? PayoutAccountResponseDto.fromDomain(result.payoutAccount)
       : null;
-    dto.buildingCount = result.buildingCount ?? 0;
-    dto.activeContractCount = result.activeContractCount ?? 0;
+    dto.buildingCount = result.buildingCount;
+    dto.activeContractCount = result.activeContractCount;
     return dto;
   }
 }

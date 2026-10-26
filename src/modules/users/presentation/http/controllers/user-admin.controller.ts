@@ -208,7 +208,15 @@ export class UserAdminController {
   })
   @ApiResponse({ status: 403, description: 'FORBIDDEN' })
   @ApiResponse({ status: 404, description: 'USER_NOT_FOUND' })
-  @ApiResponse({ status: 409, description: 'USER_DELETE_ALREADY_DELETED' })
+  @ApiResponse({
+    status: 409,
+    description:
+      'USER_DELETE_ALREADY_DELETED or USER_DELETE_HAS_ACTIVE_CONTRACT',
+  })
+  @ApiResponse({
+    status: 503,
+    description: 'SERVICE_UNAVAILABLE (Tenancy-Service could not confirm)',
+  })
   async deleteUser(
     @CurrentUser() admin: AuthenticatedUser,
     @Param('userId', ParseUUIDPipe) userId: Uuid,
