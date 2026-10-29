@@ -10,6 +10,7 @@ import { UsersModule } from 'modules/users/users.module';
 import { AuthModule } from 'modules/auth/auth.module';
 import { InboxModule } from 'modules/inbox/inbox.module';
 import { OutboxModule } from 'modules/outbox/outbox.module';
+import { MediaModule } from 'modules/media/media.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { OutboxModule } from 'modules/outbox/outbox.module';
     SecurityModule,
     UsersModule,
     AuthModule,
+    MediaModule,
     InboxModule,
     OutboxModule,
     HealthModule,
