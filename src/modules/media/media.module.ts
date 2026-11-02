@@ -18,6 +18,8 @@ import { MediaEntity } from './infrastructure/persistence/media.typeorm-entity';
 import { R2ObjectStorage } from './infrastructure/storage/r2-object-storage';
 import { MEDIA_DI_TOKEN } from './media.di-token';
 import { MediaController } from './presentation/http/controllers/media.controller';
+import { MediaInternalController } from './presentation/http/controllers/media-internal.controller';
+import { MediaChatAttachmentValidateQueryHandler } from './application/queries/media-chat-attachment-validate/media-chat-attachment-validate.query.handler';
 
 const commandHandlers = [
   MediaPresignUploadCommandHandler,
@@ -25,7 +27,10 @@ const commandHandlers = [
   MediaDeleteCommandHandler,
 ];
 
-const queryHandlers = [MediaGetQueryHandler];
+const queryHandlers = [
+  MediaGetQueryHandler,
+  MediaChatAttachmentValidateQueryHandler,
+];
 
 const ownerResolvers = [
   LocalUserOwnerResolver,
@@ -36,7 +41,7 @@ const ownerResolvers = [
 
 @Module({
   imports: [CqrsModule, TypeOrmModule.forFeature([MediaEntity]), UsersModule],
-  controllers: [MediaController],
+  controllers: [MediaController, MediaInternalController],
   providers: [
     MediaConfigService,
     MediaAccessService,
