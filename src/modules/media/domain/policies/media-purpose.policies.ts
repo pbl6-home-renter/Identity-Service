@@ -26,6 +26,10 @@ export interface MediaPurposePolicy {
   readonly canUpload: AccessRule;
   /** Admins and the uploader can always read; this rule covers everyone else. */
   readonly canRead: AccessRule;
+  /** Some resources require the owner service to authorize every operation, even admins/uploaders. */
+  readonly ownerAuthorizationRequired?: boolean;
+  /** Whether the generic media delete endpoint may delete this purpose. */
+  readonly allowDelete?: boolean;
   /** Only one live file per owner: completing a new one replaces the previous. */
   readonly singlePerOwner?: boolean;
   /** Owner statuses in which the file is evidence and can no longer be deleted. */
@@ -124,11 +128,13 @@ export const MEDIA_PURPOSE_POLICIES: Readonly<
   },
 
   [MediaPurpose.CHAT_ATTACHMENT]: {
-    ownerTypes: [MediaOwnerType.MESSAGE],
+    ownerTypes: [MediaOwnerType.CONVERSATION],
     visibility: MediaVisibility.PRIVATE,
-    contentTypes: IMAGE_AND_PDF_CONTENT_TYPES,
+    contentTypes: IMAGE_CONTENT_TYPES,
     canUpload: isParticipant,
     canRead: isParticipant,
+    ownerAuthorizationRequired: true,
+    allowDelete: false,
   },
 };
 

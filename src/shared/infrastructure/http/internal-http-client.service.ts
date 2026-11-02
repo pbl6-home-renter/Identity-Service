@@ -30,9 +30,12 @@ export class InternalHttpClient implements IInternalHttpClient {
     private readonly httpService: HttpService,
     configService: ApiConfigService,
   ) {
+    const { identityUrl, tenancyUrl, communityUrl } =
+      configService.peerServices;
     this.baseUrls = {
-      [PeerService.IDENTITY]: configService.peerServices.identityUrl,
-      [PeerService.TENANCY]: configService.peerServices.tenancyUrl,
+      [PeerService.IDENTITY]: identityUrl,
+      [PeerService.TENANCY]: tenancyUrl,
+      [PeerService.COMMUNITY]: communityUrl,
     };
     this.serviceToken = configService.auth.serviceToken;
   }

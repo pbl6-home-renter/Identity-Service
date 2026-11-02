@@ -21,13 +21,20 @@ export class MediaAccessService {
   ) {}
 
   async assertCanUpload(actor: MediaActor, media: Media): Promise<void> {
-    const owner = await this.findOwner(media);
+    const owner = await this.findOwner(media, actor.id);
     if (!owner || !MediaAccessPolicy.canUpload(actor, media, owner)) {
       throw new MediaForbiddenException();
     }
   }
 
-  assertCanComplete(actor: MediaActor, media: Media): void {
+  async assertCanComplete(actor: MediaActor, media: Media): Promise<void> {
+    if (media.policy.ownerAuthorizationRequired) {
+      const owner = await this.findOwner(media, actor.id);
+      if (!owner || !MediaAccessPolicy.canUpload(actor, media, owner)) {
+        throw new MediaForbiddenException();
+      }
+      return;
+    }
     if (!MediaAccessPolicy.canComplete(actor, media)) {
       throw new MediaForbiddenException();
     }
@@ -42,7 +49,7 @@ export class MediaAccessService {
       throw new MediaUnauthenticatedException();
     }
 
-    const owner = await this.findOwner(media);
+    const owner = await this.findOwner(media, actor.id, media.id);
     if (!owner || !MediaAccessPolicy.canRead(actor, media, owner)) {
       throw new MediaForbiddenException();
     }
@@ -63,7 +70,16 @@ export class MediaAccessService {
     }
   }
 
-  private findOwner(media: Media): Promise<OwnerSnapshot | null> {
-    return this.owners.resolve(media.ownerType, media.ownerId);
+  private findOwner(
+    media: Media,
+    actorUserId?: MediaActor['id'],
+    mediaId?: Media['id'],
+  ): Promise<OwnerSnapshot | null> {
+    return this.owners.resolve(
+      media.ownerType,
+      media.ownerId,
+      actorUserId,
+      mediaId,
+    );
   }
 }

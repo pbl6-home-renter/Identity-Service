@@ -121,20 +121,32 @@ export class MediaController {
   })
   @ApiProduces('application/octet-stream')
   @ApiResponse({ status: 200, description: 'The file content' })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirect to a public or short-lived R2 URL',
+    headers: { Location: { schema: { type: 'string', format: 'uri' } } },
+  })
   @ApiResponse({ status: 403, description: 'FORBIDDEN' })
   @ApiResponse({ status: 404, description: 'RESOURCE_NOT_FOUND' })
   @ApiResponse({ status: 410, description: 'MEDIA_DELETED' })
   async getFile(
     @CurrentUser() user: AuthenticatedUser | undefined,
     @Param('mediaId', ParseUUIDPipe) mediaId: Uuid,
-  ): Promise<StreamableFile> {
-    const { media, content }: MediaFileResult = await this.queryBus.execute(
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<StreamableFile | void> {
+    const result: MediaFileResult = await this.queryBus.execute(
       MediaGetQuery.create(user ?? null, mediaId),
     );
-    return new StreamableFile(content, {
-      type: media.contentType,
-      length: media.sizeBytes,
-      disposition: `inline; filename*=UTF-8''${encodeURIComponent(media.fileName)}`,
+    if ('redirectUrl' in result) {
+      response.setHeader('Cache-Control', 'private, no-store');
+      response.redirect(HttpStatus.FOUND, result.redirectUrl);
+      return;
+    }
+
+    return new StreamableFile(result.content, {
+      type: result.media.contentType,
+      length: result.media.sizeBytes,
+      disposition: `inline; filename*=UTF-8''${encodeURIComponent(result.media.fileName)}`,
     });
   }
 

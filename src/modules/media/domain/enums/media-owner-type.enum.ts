@@ -7,4 +7,5 @@ export enum MediaOwnerType {
   METER_READING = 'meter_reading',
   ISSUE_REPORT = 'issue_report',
   MESSAGE = 'message',
+  CONVERSATION = 'conversation',
 }

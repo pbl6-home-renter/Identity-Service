@@ -1,6 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { MediaNotFoundException } from '../../../domain/exceptions/media-not-found.exception';
+import { MediaPurpose } from '../../../domain/enums/media-purpose.enum';
 import { IMediaRepository } from '../../../domain/repositories/media.repository.interface';
 import { MEDIA_DI_TOKEN } from '../../../media.di-token';
 import { IObjectStorage } from '../../ports/object-storage.port';
@@ -29,6 +30,13 @@ export class MediaGetQueryHandler implements IQueryHandler<
 
     media.ensureReadable();
     await this.access.assertCanRead(actor, media);
+
+    if (media.purpose === MediaPurpose.CHAT_ATTACHMENT) {
+      return {
+        media,
+        redirectUrl: await this.storage.createDownloadUrl(media),
+      };
+    }
 
     return { media, content: await this.storage.read(media) };
   }

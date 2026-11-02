@@ -42,7 +42,7 @@ export class MediaCompleteUploadCommandHandler implements ICommandHandler<
       throw new MediaNotFoundException();
     }
 
-    this.access.assertCanComplete(actor, media);
+    await this.access.assertCanComplete(actor, media);
     media.ensureCompletable();
 
     if (!media.isUploaded) {
