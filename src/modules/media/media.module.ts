@@ -20,6 +20,7 @@ import { MEDIA_DI_TOKEN } from './media.di-token';
 import { MediaController } from './presentation/http/controllers/media.controller';
 import { MediaInternalController } from './presentation/http/controllers/media-internal.controller';
 import { MediaChatAttachmentValidateQueryHandler } from './application/queries/media-chat-attachment-validate/media-chat-attachment-validate.query.handler';
+import { MediaConversationAvatarValidateQueryHandler } from './application/queries/media-conversation-avatar-validate/media-conversation-avatar-validate.query.handler';
 
 const commandHandlers = [
   MediaPresignUploadCommandHandler,
@@ -30,6 +31,7 @@ const commandHandlers = [
 const queryHandlers = [
   MediaGetQueryHandler,
   MediaChatAttachmentValidateQueryHandler,
+  MediaConversationAvatarValidateQueryHandler,
 ];
 
 const ownerResolvers = [
