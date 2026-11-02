@@ -8,5 +8,7 @@ export interface IMediaOwnerResolver {
   resolve(
     ownerType: MediaOwnerType,
     ownerId: Uuid,
+    actorUserId?: Uuid,
+    mediaId?: Uuid,
   ): Promise<OwnerSnapshot | null>;
 }

@@ -6,6 +6,7 @@ import { OwnerSnapshot } from '../../domain/value-objects/owner-snapshot';
 import { LocalUserOwnerResolver } from './local-user-owner.resolver';
 import { TenancyOwnerResolver } from './tenancy-owner.resolver';
 import { UnavailableOwnerResolver } from './unavailable-owner.resolver';
+import { CommunityConversationOwnerResolver } from './community-conversation-owner.resolver';
 
 /** Routes each owner type to the service that owns it. */
 @Injectable()
@@ -18,6 +19,7 @@ export class MediaOwnerResolverRegistry implements IMediaOwnerResolver {
     user: LocalUserOwnerResolver,
     tenancy: TenancyOwnerResolver,
     community: UnavailableOwnerResolver,
+    conversation: CommunityConversationOwnerResolver,
   ) {
     this.resolvers = {
       [MediaOwnerType.USER]: user,
@@ -28,6 +30,7 @@ export class MediaOwnerResolverRegistry implements IMediaOwnerResolver {
       [MediaOwnerType.METER_READING]: tenancy,
       [MediaOwnerType.ISSUE_REPORT]: community,
       [MediaOwnerType.MESSAGE]: community,
+      [MediaOwnerType.CONVERSATION]: conversation,
     };
   }
 

@@ -41,6 +41,13 @@ export class R2ObjectStorage implements IObjectStorage {
     });
   }
 
+  createDownloadUrl(media: Media): Promise<string> {
+    const command = new GetObjectCommand(this.locationOf(media));
+    return getSignedUrl(this.client, command, {
+      expiresIn: this.config.signedDownloadUrlTtlSeconds,
+    });
+  }
+
   async stat(media: Media): Promise<StoredFile | null> {
     try {
       const head = await this.client.send(

@@ -14,6 +14,7 @@ export interface R2StorageConfig {
   /** Base URL serving the public bucket, e.g. `https://pub-xxxx.r2.dev`. */
   publicBaseUrl: string;
   privateBucket: string;
+  signedDownloadUrlTtlSeconds: number;
 }
 
 /** Media settings live here rather than in `shared/`, which must stay identical across services. */
@@ -31,6 +32,11 @@ export class MediaConfigService {
       publicBucket: read('R2_PUBLIC_BUCKET'),
       publicBaseUrl: read('R2_PUBLIC_BASE_URL').replace(/\/+$/, ''),
       privateBucket: read('R2_PRIVATE_BUCKET'),
+      signedDownloadUrlTtlSeconds: getConfigNumber(
+        this.configService,
+        'MEDIA_DOWNLOAD_URL_TTL_SECONDS',
+        300,
+      ),
     };
   }
 

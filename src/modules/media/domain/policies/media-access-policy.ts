@@ -14,7 +14,7 @@ export class MediaAccessPolicy {
     owner: OwnerSnapshot,
   ): boolean {
     return (
-      isAdmin(actor) ||
+      (isAdmin(actor) && !media.policy.ownerAuthorizationRequired) ||
       media.policy.canUpload({
         actor,
         owner,
@@ -29,6 +29,9 @@ export class MediaAccessPolicy {
 
   /** Public files, admins and the uploader never need the owner looked up. */
   static canReadWithoutOwner(actor: MediaActor | null, media: Media): boolean {
+    if (media.policy.ownerAuthorizationRequired) {
+      return false;
+    }
     if (media.isPublic) {
       return true;
     }
@@ -45,7 +48,10 @@ export class MediaAccessPolicy {
   }
 
   static canDelete(actor: MediaActor, media: Media): boolean {
-    return isAdmin(actor) || isUploader(actor, media);
+    return (
+      media.policy.allowDelete !== false &&
+      (isAdmin(actor) || isUploader(actor, media))
+    );
   }
 
   /** e.g. the ownership proof of an approved building, the signed contract file. */

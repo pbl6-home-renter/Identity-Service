@@ -7,6 +7,9 @@ export interface IObjectStorage {
   /** Signed URL the client PUTs the file to; `Content-Type` is part of the signature. */
   createUploadUrl(media: Media, expiresInSeconds: number): Promise<string>;
 
+  /** Signed URL the client GETs the file from after media access is authorized. */
+  createDownloadUrl(media: Media): Promise<string>;
+
   /** `null` while the client has not uploaded the file. */
   stat(media: Media): Promise<StoredFile | null>;
 
