@@ -31,7 +31,10 @@ export class MediaGetQueryHandler implements IQueryHandler<
     media.ensureReadable();
     await this.access.assertCanRead(actor, media);
 
-    if (media.purpose === MediaPurpose.CHAT_ATTACHMENT) {
+    if (
+      media.purpose === MediaPurpose.CHAT_ATTACHMENT ||
+      media.purpose === MediaPurpose.CONVERSATION_AVATAR
+    ) {
       return {
         media,
         redirectUrl: await this.storage.createDownloadUrl(media),

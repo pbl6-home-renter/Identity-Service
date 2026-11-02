@@ -136,6 +136,16 @@ export const MEDIA_PURPOSE_POLICIES: Readonly<
     ownerAuthorizationRequired: true,
     allowDelete: false,
   },
+
+  [MediaPurpose.CONVERSATION_AVATAR]: {
+    ownerTypes: [MediaOwnerType.CONVERSATION],
+    visibility: MediaVisibility.PRIVATE,
+    contentTypes: IMAGE_CONTENT_TYPES,
+    canUpload: isParticipant,
+    canRead: isParticipant,
+    ownerAuthorizationRequired: true,
+    allowDelete: false,
+  },
 };
 
 export function policyOf(purpose: MediaPurpose): MediaPurposePolicy {
