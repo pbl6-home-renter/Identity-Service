@@ -18,6 +18,7 @@ import { PasswordResetConfirmCommandHandler } from './application/commands/passw
 import { JwksController } from './presentation/http/controllers/jwks.controller';
 import { AuthRefreshCommandHandler } from './application/commands/auth-refresh/auth-refresh.command.handler';
 import { AuthLogoutCommandHandler } from './application/commands/auth-logout/auth-logout.command.handler';
+import { PasswordResetEmailComposer } from './infrastructure/services/password-reset-email.composer';
 
 import { AuthRevokeTokensOnUserEventsHandler } from './application/event-handlers/auth-revoke-tokens-on-user-events.event.handler';
 
@@ -42,6 +43,11 @@ const eventHandlers = [AuthRevokeTokensOnUserEventsHandler];
   providers: [
     JwtConfigService,
     TokenService,
+    PasswordResetEmailComposer,
+    {
+      provide: AUTH_DI_TOKEN.PASSWORD_RESET_EMAIL_COMPOSER,
+      useExisting: PasswordResetEmailComposer,
+    },
     {
       provide: AUTH_DI_TOKEN.TOKEN_SERVICE,
       useExisting: TokenService,

@@ -14,6 +14,8 @@ import { IUnitOfWork } from 'shared/application/ports/unit-of-work.port';
 import { OUTBOX_DI_TOKEN } from 'modules/outbox/outbox.di-token';
 import { OutboxRepository } from 'modules/outbox/domain/repositories/outbox.repository';
 import { OutboxMessage } from 'modules/outbox/domain/entities/outbox-message.entity';
+import { PasswordResetEmailComposerPort } from '../../ports/password-reset-email-composer.port';
+import { EmailSendRequestedEvent } from '../../events/email-send-requested.event';
 
 @CommandHandler(PasswordResetRequestCommand)
 export class PasswordResetRequestCommandHandler implements ICommandHandler<PasswordResetRequestCommand> {
@@ -28,6 +30,8 @@ export class PasswordResetRequestCommandHandler implements ICommandHandler<Passw
     private readonly unitOfWork: IUnitOfWork,
     @Inject(OUTBOX_DI_TOKEN.REPOSITORY)
     private readonly outboxRepository: OutboxRepository,
+    @Inject(AUTH_DI_TOKEN.PASSWORD_RESET_EMAIL_COMPOSER)
+    private readonly emailComposer: PasswordResetEmailComposerPort,
   ) {}
 
   async execute(command: PasswordResetRequestCommand): Promise<void> {
@@ -46,19 +50,22 @@ export class PasswordResetRequestCommandHandler implements ICommandHandler<Passw
       expiresAt: generatedToken.expiresAt,
     });
 
-    // Community emails the link on `user.password_reset_requested`.
-    user.requestPasswordReset(
-      generatedToken.rawPasswordResetToken,
-      generatedToken.expiresAt,
+    const email = this.emailComposer.compose({
+      name: user.name,
+      token: generatedToken.rawPasswordResetToken,
+    });
+    const emailRequested = new EmailSendRequestedEvent(
+      user.email.value,
+      email.subject,
+      email.text,
+      email.html,
     );
 
     await this.unitOfWork.run(async (context) => {
       await this.passwordResetTokenRepository.save(passwordResetToken, context);
 
       await this.outboxRepository.append(
-        user
-          .pullDomainEvents()
-          .map((event) => OutboxMessage.fromDomainEvent(event)),
+        [OutboxMessage.fromDomainEvent(emailRequested)],
         context,
       );
     });

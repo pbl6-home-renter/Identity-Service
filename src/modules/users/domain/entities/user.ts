@@ -14,7 +14,6 @@ import { UserUpdatedEvent } from '../events/user-updated.event';
 import { UserLockedEvent } from '../events/user-locked.event';
 import { UserUnlockedEvent } from '../events/user-unlocked.event';
 import { UserDeletedEvent } from '../events/user-deleted.event';
-import { UserPasswordResetRequestedEvent } from '../events/user-password-reset-requested.event';
 
 export class User extends AggregateRoot {
   private constructor(
@@ -75,18 +74,6 @@ export class User extends AggregateRoot {
     }
     this.markAsDeleted();
     this.addDomainEvent(new UserDeletedEvent(this.id, this.role));
-  }
-
-  requestPasswordReset(rawToken: string, expiresAt: Date): void {
-    this.addDomainEvent(
-      new UserPasswordResetRequestedEvent(
-        this.id,
-        this.email.value,
-        this.name,
-        rawToken,
-        expiresAt,
-      ),
-    );
   }
 
   updateProfile(props: { name?: string; phone?: Phone }): User {

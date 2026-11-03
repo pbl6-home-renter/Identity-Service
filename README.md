@@ -45,7 +45,7 @@ Service được fork từ [`boilerplate`](https://github.com/pbl6-home-renter/b
 - **Đăng ký / đăng nhập** bằng email hoặc số điện thoại, mật khẩu băm bằng `bcrypt`.
 - **JWT RS256 + JWKS** — access token sống 15 phút, ký bằng private key; public key công bố tại `/api/v1/.well-known/jwks.json` (hỗ trợ `kid` để rotate key).
 - **Refresh token rotation** với `family_id` và **reuse detection**: dùng lại token đã revoke → revoke cả family, trả `401 TOKEN_REUSED`.
-- **Đặt lại mật khẩu** bằng token dùng một lần (TTL 15 phút), phát qua sự kiện `user.password_reset_requested`.
+- **Đặt lại mật khẩu** bằng token dùng một lần (TTL 15 phút); Identity render nội dung và phát `email.send_requested` qua outbox để Community gửi SMTP.
 - **Quản trị người dùng** (admin): tìm kiếm, xem chi tiết (kèm thống kê lấy từ Tenancy-Service), cập nhật, khóa/mở khóa, xóa mềm. Token bị thu hồi khi user bị khóa, xóa hoặc đổi mật khẩu.
 - **Hồ sơ chủ trọ** — tài khoản nhận tiền (`payoutAccount`) được cập nhật qua `PATCH /api/v1/me` (chỉ landlord).
 - **Media** — upload hai bước bằng presigned URL lên Cloudflare R2 (bucket public/private), phân quyền theo mục đích sử dụng (`avatar`, `cover_photo`, `cccd_front`, `contract_signed`, …).
@@ -152,19 +152,20 @@ Tất cả biến lấy từ [`.env.example`](.env.example). Bảng dưới ch�
 | `SERVICE_TOKEN` | | Shared secret cho endpoint `internal/*`; trống = tắt |
 | `TENANCY_SERVICE_URL` | | URL nội bộ của Tenancy-Service (`http://localhost:3002`); trống → lời gọi trả `503` |
 | `INTERNAL_HTTP_TIMEOUT_MS` | | Timeout gọi HTTP nội bộ (`3000`) |
+| `PUBLIC_APP_URL` | | Origin của web client để tạo link `/reset-password` (`http://localhost:5173`) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | | Thông tin Cloudflare R2; trống → endpoint media trả `503` |
 | `R2_PUBLIC_BUCKET`, `R2_PUBLIC_BASE_URL`, `R2_PRIVATE_BUCKET` | | Bucket public (cần bật public access) và private |
 | `MEDIA_UPLOAD_TTL_SECONDS`, `MEDIA_MAX_SIZE_BYTES` | | TTL presigned URL (`900`) và kích thước tối đa (`10485760`) |
 | `RABBITMQ_URL` | Có | URL broker (`amqp://guest:guest@localhost:5672`) |
 | `RABBITMQ_EXCHANGE`, `RABBITMQ_EXCHANGE_TYPE` | | Exchange `pbl6.events`, kiểu `topic` |
 | `RABBITMQ_PREFETCH`, `RABBITMQ_CONNECT_TIMEOUT_MS` | | Prefetch (`10`), timeout kết nối (`10000`) |
-| `RABBITMQ_PUBLISH_MANDATORY` | | `false` — chưa có consumer bind `user.*`; bật lại khi Tenancy/Community subscribe |
+| `RABBITMQ_PUBLISH_MANDATORY` | | `false` — còn các event `user.*` chưa có consumer; queue email vẫn cần được khai báo trước khi Identity publish |
 | `RABBITMQ_CONSUMER_MAX_ATTEMPTS`, `RABBITMQ_CONSUMER_RETRY_DELAY_MS` | | Retry phía consumer (`5`, `10000`) |
 | `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS` | | Tài khoản RabbitMQ (`guest`) |
 | `OUTBOX_RELAY_ENABLED`, `OUTBOX_RELAY_INTERVAL_MS`, `OUTBOX_RELAY_BATCH_SIZE` | | Relay outbox (`true`, `1000`, `100`) |
 | `OUTBOX_PUBLISH_TIMEOUT_MS`, `OUTBOX_CLAIM_TIMEOUT_MS`, `OUTBOX_MAX_ATTEMPTS` | | `5000`, `60000`, `10` |
 | `OUTBOX_RETRY_BASE_DELAY_MS`, `OUTBOX_RETRY_MAX_DELAY_MS` | | Backoff `1000` → `60000` |
-| `OUTBOX_RETENTION_MS` | | `900000` (15 phút) — xóa sớm bản ghi đã publish vì `user.password_reset_requested` chứa raw reset token |
+| `OUTBOX_RETENTION_MS` | | `900000` (15 phút) — xóa sớm bản ghi đã publish vì email reset chứa link/token |
 | `REDIS_HOST`, `REDIS_PORT` | | Có trong `.env.example` nhưng hiện code chưa sử dụng |
 | `DEFAULT_ADMIN_ID`, `DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASSWORD`, `DEFAULT_ADMIN_NAME`, `DEFAULT_ADMIN_PHONE` | | Tài khoản admin do `seed:run` tạo |
 
@@ -335,7 +336,7 @@ Các sự kiện được ghi vào bảng outbox trong cùng transaction với t
 | `user.locked` | Admin khóa tài khoản |
 | `user.unlocked` | Admin mở khóa tài khoản |
 | `user.deleted` | Admin xóa mềm tài khoản |
-| `user.password_reset_requested` | Yêu cầu đặt lại mật khẩu (payload chứa raw reset token, TTL 15 phút) |
+| `email.send_requested` | Yêu cầu gửi email đã render; Identity phát sự kiện này cho luồng reset mật khẩu |
 | `landlord.payout_account_updated` | Chủ trọ cập nhật tài khoản nhận tiền qua `PATCH /me` |
 
 Khi một message chuyển sang `FAILED`, retry thủ công bằng `npm run outbox:requeue -- <message-id>`.

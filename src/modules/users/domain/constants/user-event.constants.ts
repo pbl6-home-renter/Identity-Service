@@ -6,5 +6,4 @@ export const USER_EVENTS = {
   LOCKED: 'user.locked',
   UNLOCKED: 'user.unlocked',
   DELETED: 'user.deleted',
-  PASSWORD_RESET_REQUESTED: 'user.password_reset_requested',
 } as const;
