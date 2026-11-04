@@ -8,7 +8,7 @@ import { UserDirectoryEntryModel } from '../queries/models/user-directory-entry.
 
 export interface UserDirectorySearch {
   readonly callerUserId: Uuid;
-  readonly searchKeyword: string;
+  readonly searchKeyword: string | null;
   readonly pageNo: number;
   readonly pageSize: number;
 }
@@ -22,7 +22,7 @@ export interface IUserQueryService {
     options: OffsetPageQuery<GetUsersAdminFilterModel>,
   ): Promise<PaginatedResult<User>>;
 
-  /** Active landlords/tenants other than the caller whose name matches the keyword. */
+  /** Active landlords/tenants other than the caller, optionally filtered by name. */
   findDirectoryUsers(
     search: UserDirectorySearch,
   ): Promise<PaginatedResult<UserDirectoryEntryModel>>;

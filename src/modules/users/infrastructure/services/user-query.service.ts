@@ -114,12 +114,15 @@ export class UserQueryService implements IUserQueryService {
       .andWhere('user.id <> :callerUserId', {
         callerUserId: search.callerUserId,
       })
-      .andWhere(
-        `${foldVietnameseSql('user.name')} LIKE ${foldVietnameseSql(':namePattern')}`,
-        { namePattern: containsLikePattern(search.searchKeyword) },
-      )
       .orderBy('user.name', 'ASC')
       .addOrderBy('user.id', 'ASC');
+
+    if (search.searchKeyword !== null) {
+      qb.andWhere(
+        `${foldVietnameseSql('user.name')} LIKE ${foldVietnameseSql(':namePattern')}`,
+        { namePattern: containsLikePattern(search.searchKeyword) },
+      );
+    }
 
     return TypeOrmPaginator.offset(qb, search).paginate((raw) => ({
       id: raw.id,
