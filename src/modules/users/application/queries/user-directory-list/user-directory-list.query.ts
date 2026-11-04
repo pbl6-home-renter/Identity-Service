@@ -5,13 +5,13 @@ import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 export interface UserDirectoryListInput {
   pageNo: number;
   pageSize: number;
-  q: string;
+  q?: string;
 }
 
 export class UserDirectoryListQuery implements IQuery {
   private constructor(
     readonly callerUserId: Uuid,
-    readonly searchKeyword: string,
+    readonly searchKeyword: string | null,
     readonly pageNo: number,
     readonly pageSize: number,
   ) {}
@@ -22,7 +22,7 @@ export class UserDirectoryListQuery implements IQuery {
   ): UserDirectoryListQuery {
     return new UserDirectoryListQuery(
       callerUserId,
-      request.q,
+      request.q ?? null,
       request.pageNo,
       request.pageSize,
     );

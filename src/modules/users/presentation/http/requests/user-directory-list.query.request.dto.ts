@@ -1,8 +1,8 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
   IsInt,
-  IsNotEmpty,
+  IsOptional,
   IsString,
   Max,
   MaxLength,
@@ -11,20 +11,22 @@ import {
 import { UserDirectoryListInput } from '../../../application/queries/user-directory-list/user-directory-list.query';
 
 export class UserDirectoryListQueryRequestDto implements UserDirectoryListInput {
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       'Từ khóa tên (1–100 ký tự sau khi trim); không phân biệt hoa/thường và dấu tiếng Việt',
-    minLength: 1,
+    minLength: 0,
     maxLength: 100,
     example: 'Nguyen',
   })
   @Transform(({ value }) =>
-    typeof value === 'string' ? value.normalize('NFC').trim() : value,
+    typeof value === 'string'
+      ? value.normalize('NFC').trim() || undefined
+      : value,
   )
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(100)
-  q: string;
+  q?: string;
 
   @ApiPropertyOptional({ default: 1, minimum: 1 })
   @Type(() => Number)
