@@ -10,6 +10,7 @@ import { BcryptPasswordHasher } from './infrastructure/services/bcrypt-password-
 import { USERS_DI_TOKEN } from './users.di-token';
 import { UserController } from './presentation/http/controllers/user.controller';
 import { UserAdminController } from './presentation/http/controllers/user-admin.controller';
+import { UserDirectoryController } from './presentation/http/controllers/user-directory.controller';
 import { UserGetMeQueryHandler } from './application/queries/user-get-me/user-get-me.query.handler';
 import { UserUpdateMeCommandHandler } from './application/commands/user-update-me/user-update-me.command.handler';
 import { UserChangePasswordCommandHandler } from './application/commands/user-change-password/user-change-password.command.handler';
@@ -20,6 +21,7 @@ import { UserLockCommandHandler } from './application/commands/user-lock/user-lo
 import { UserUnlockCommandHandler } from './application/commands/user-unlock/user-unlock.command.handler';
 import { UserDeleteCommandHandler } from './application/commands/user-delete/user-delete.command.handler';
 import { UserLookupInternalQueryHandler } from './application/queries/user-lookup-internal/user-lookup-internal.query.handler';
+import { UserDirectoryListQueryHandler } from './application/queries/user-directory-list/user-directory-list.query.handler';
 import { UserInternalController } from './presentation/http/controllers/user-internal.controller';
 import { TenancyUserStatsService } from './infrastructure/services/tenancy-user-stats.service';
 
@@ -37,6 +39,7 @@ const queryHandlers = [
   UserListAdminQueryHandler,
   UserGetDetailAdminQueryHandler,
   UserLookupInternalQueryHandler,
+  UserDirectoryListQueryHandler,
 ];
 
 @Module({
@@ -46,7 +49,13 @@ const queryHandlers = [
     LandlordProfilesModule,
     OutboxModule,
   ],
-  controllers: [UserController, UserAdminController, UserInternalController],
+  controllers: [
+    UserController,
+    // Must precede UserAdminController: `users/directory` vs `users/:userId`.
+    UserDirectoryController,
+    UserAdminController,
+    UserInternalController,
+  ],
   providers: [
     {
       provide: USERS_DI_TOKEN.REPOSITORY,

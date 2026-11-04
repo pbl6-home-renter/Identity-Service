@@ -7,11 +7,21 @@ import { PaginatedResult } from 'shared/application/pagination/paginated-result'
 import { TypeOrmPaginator } from 'shared/infrastructure/database/pagination/typeorm.paginator';
 import { LandlordProfileMapper } from 'modules/landlord-profiles/infrastructure/persistence/mappers/landlord-profile.mapper';
 import { User } from '../../domain/entities/user';
-import { IUserQueryService } from '../../application/ports/user-query-service.port';
+import { UserRole } from 'shared/domain/enums/user-role.enum';
+import { UserStatus } from 'shared/domain/enums/user-status.enum';
+import {
+  IUserQueryService,
+  UserDirectorySearch,
+} from '../../application/ports/user-query-service.port';
+import { UserDirectoryEntryModel } from '../../application/queries/models/user-directory-entry.model';
 import { GetMeUserModel } from '../../application/queries/models/get-me-user.model';
 import { GetUsersAdminFilterModel } from '../../application/queries/models/get-users-admin-filter.model';
 import { UserEntity } from '../persistence/user.typeorm-entity';
 import { UserMapper } from '../persistence/mappers/user.mapper';
+import {
+  containsLikePattern,
+  foldVietnameseSql,
+} from '../persistence/vietnamese-search.sql';
 
 @Injectable()
 export class UserQueryService implements IUserQueryService {
@@ -88,5 +98,32 @@ export class UserQueryService implements IUserQueryService {
         alias: 'user',
       })
       .paginate((raw) => UserMapper.toDomain(raw));
+  }
+
+  async findDirectoryUsers(
+    search: UserDirectorySearch,
+  ): Promise<PaginatedResult<UserDirectoryEntryModel>> {
+    const qb = this.repository
+      .createQueryBuilder('user')
+      .select(['user.id', 'user.name'])
+      .where('user.isDeleted = :isDeleted', { isDeleted: false })
+      .andWhere('user.status = :status', { status: UserStatus.ACTIVE })
+      .andWhere('user.role IN (:...roles)', {
+        roles: [UserRole.LANDLORD, UserRole.TENANT],
+      })
+      .andWhere('user.id <> :callerUserId', {
+        callerUserId: search.callerUserId,
+      })
+      .andWhere(
+        `${foldVietnameseSql('user.name')} LIKE ${foldVietnameseSql(':namePattern')}`,
+        { namePattern: containsLikePattern(search.searchKeyword) },
+      )
+      .orderBy('user.name', 'ASC')
+      .addOrderBy('user.id', 'ASC');
+
+    return TypeOrmPaginator.offset(qb, search).paginate((raw) => ({
+      id: raw.id,
+      name: raw.name,
+    }));
   }
 }
