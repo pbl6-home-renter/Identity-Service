@@ -21,6 +21,10 @@ import { MediaController } from './presentation/http/controllers/media.controlle
 import { MediaInternalController } from './presentation/http/controllers/media-internal.controller';
 import { MediaChatAttachmentValidateQueryHandler } from './application/queries/media-chat-attachment-validate/media-chat-attachment-validate.query.handler';
 import { MediaConversationAvatarValidateQueryHandler } from './application/queries/media-conversation-avatar-validate/media-conversation-avatar-validate.query.handler';
+import { MediaLookupInternalQueryHandler } from './application/queries/media-lookup-internal/media-lookup-internal.query.handler';
+import { MediaOwnerLookupQueryHandler } from './application/queries/media-owner-lookup/media-owner-lookup.query.handler';
+import { InboxModule } from 'modules/inbox/inbox.module';
+import { MediaOwnerDeletedSubscriber } from './presentation/messaging/media-owner-deleted.subscriber';
 
 const commandHandlers = [
   MediaPresignUploadCommandHandler,
@@ -32,6 +36,8 @@ const queryHandlers = [
   MediaGetQueryHandler,
   MediaChatAttachmentValidateQueryHandler,
   MediaConversationAvatarValidateQueryHandler,
+  MediaLookupInternalQueryHandler,
+  MediaOwnerLookupQueryHandler,
 ];
 
 const ownerResolvers = [
@@ -42,7 +48,12 @@ const ownerResolvers = [
 ];
 
 @Module({
-  imports: [CqrsModule, TypeOrmModule.forFeature([MediaEntity]), UsersModule],
+  imports: [
+    CqrsModule,
+    TypeOrmModule.forFeature([MediaEntity]),
+    UsersModule,
+    InboxModule,
+  ],
   controllers: [MediaController, MediaInternalController],
   providers: [
     MediaConfigService,
@@ -67,6 +78,7 @@ const ownerResolvers = [
     },
     ...commandHandlers,
     ...queryHandlers,
+    MediaOwnerDeletedSubscriber,
   ],
 })
 export class MediaModule {}

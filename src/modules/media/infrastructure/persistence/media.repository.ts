@@ -30,6 +30,27 @@ export class MediaRepository implements IMediaRepository {
     return raw ? MediaMapper.toDomain(raw) : null;
   }
 
+  async findByIds(ids: readonly Uuid[]): Promise<Media[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.repository
+      .createQueryBuilder('media')
+      .where('media.id IN (:...ids)', { ids })
+      .andWhere('media.isDeleted = false')
+      .andWhere('media.status = :status', { status: MediaStatus.UPLOADED })
+      .getMany();
+    return rows.map((raw) => MediaMapper.toDomain(raw));
+  }
+
+  async findByOwner(
+    ownerType: MediaOwnerType,
+    ownerId: Uuid,
+  ): Promise<Media[]> {
+    const rows = await this.repository.find({
+      where: { ownerType, ownerId, isDeleted: false },
+    });
+    return rows.map((raw) => MediaMapper.toDomain(raw));
+  }
+
   async findUploadedByOwner(
     ownerType: MediaOwnerType,
     ownerId: Uuid,

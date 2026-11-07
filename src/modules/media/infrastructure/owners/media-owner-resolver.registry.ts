@@ -37,7 +37,14 @@ export class MediaOwnerResolverRegistry implements IMediaOwnerResolver {
   resolve(
     ownerType: MediaOwnerType,
     ownerId: Uuid,
+    actorUserId?: Uuid,
+    mediaId?: Uuid,
   ): Promise<OwnerSnapshot | null> {
-    return this.resolvers[ownerType].resolve(ownerType, ownerId);
+    return this.resolvers[ownerType].resolve(
+      ownerType,
+      ownerId,
+      actorUserId,
+      mediaId,
+    );
   }
 }

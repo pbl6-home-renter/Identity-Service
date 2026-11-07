@@ -10,6 +10,12 @@ export interface IMediaRepository {
   /** Includes soft-deleted media so callers can answer `410 MEDIA_DELETED`. */
   findById(id: Uuid): Promise<Media | null>;
 
+  /** Finds media records in one read for internal domain response mapping. */
+  findByIds(ids: readonly Uuid[]): Promise<Media[]>;
+
+  /** Active media of an owner, used by idempotent owner-deletion cleanup. */
+  findByOwner(ownerType: MediaOwnerType, ownerId: Uuid): Promise<Media[]>;
+
   /** Live, uploaded files of one owner for one purpose. */
   findUploadedByOwner(
     ownerType: MediaOwnerType,

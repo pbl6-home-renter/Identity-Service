@@ -1,4 +1,11 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseEnumPipe,
+  ParseUUIDPipe,
+  Query,
+} from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { InternalOnly } from 'shared/presentation/decorators/auth/internal-only.decorator';
@@ -8,12 +15,42 @@ import { MediaChatAttachmentValidateRequestDto } from '../requests/media-chat-at
 import { MediaConversationAvatarValidateQuery } from '../../../application/queries/media-conversation-avatar-validate/media-conversation-avatar-validate.query';
 import { MediaConversationAvatarValidationResult } from '../../../application/queries/media-conversation-avatar-validate/media-conversation-avatar-validate.query.handler';
 import { MediaConversationAvatarValidateRequestDto } from '../requests/media-conversation-avatar-validate.request.dto';
+import { MediaLookupInternalRequestDto } from '../requests/media-lookup-internal.request.dto';
+import { MediaLookupInternalResponseDto } from '../responses/media-lookup-internal.response.dto';
+import { MediaLookupInternalQuery } from '../../../application/queries/media-lookup-internal/media-lookup-internal.query';
+import { MediaLookupInternalResult } from '../../../application/queries/media-lookup-internal/media-lookup-internal.query.handler';
+import { Uuid } from 'shared/domain/value-objects/uuid.vo';
+import { MediaMetadataInternalResponseDto } from '../responses/media-metadata-internal.response.dto';
+import { MediaOwnerLookupQuery } from '../../../application/queries/media-owner-lookup/media-owner-lookup.query';
+import { MediaOwnerType } from '../../../domain/enums/media-owner-type.enum';
 
 @ApiExcludeController()
 @InternalOnly()
 @Controller('internal/media')
 export class MediaInternalController {
   constructor(private readonly queryBus: QueryBus) {}
+
+  @Get()
+  async lookupMany(
+    @Query() request: MediaLookupInternalRequestDto,
+  ): Promise<MediaLookupInternalResponseDto[]> {
+    const results: MediaLookupInternalResult[] = await this.queryBus.execute(
+      new MediaLookupInternalQuery(request.ids),
+    );
+    return results.map(MediaLookupInternalResponseDto.fromResult);
+  }
+
+  @Get('owner/:ownerType/:ownerId')
+  async lookupOwnerMedia(
+    @Param('ownerType', new ParseEnumPipe(MediaOwnerType))
+    ownerType: MediaOwnerType,
+    @Param('ownerId', ParseUUIDPipe) ownerId: Uuid,
+  ): Promise<MediaLookupInternalResponseDto[]> {
+    const results: MediaLookupInternalResult[] = await this.queryBus.execute(
+      new MediaOwnerLookupQuery(ownerType, ownerId),
+    );
+    return results.map(MediaLookupInternalResponseDto.fromResult);
+  }
 
   @Get('chat-attachment')
   async validateChatAttachment(
@@ -37,5 +74,15 @@ export class MediaInternalController {
         request.conversationId,
       ),
     );
+  }
+
+  @Get(':mediaId')
+  async lookupOne(
+    @Param('mediaId', ParseUUIDPipe) mediaId: Uuid,
+  ): Promise<MediaMetadataInternalResponseDto> {
+    const results: MediaLookupInternalResult[] = await this.queryBus.execute(
+      new MediaLookupInternalQuery([mediaId]),
+    );
+    return MediaMetadataInternalResponseDto.fromResult(results[0]);
   }
 }
