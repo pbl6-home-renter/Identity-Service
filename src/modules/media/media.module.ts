@@ -6,6 +6,7 @@ import { MediaCompleteUploadCommandHandler } from './application/commands/media-
 import { MediaDeleteCommandHandler } from './application/commands/media-delete/media-delete.command.handler';
 import { MediaPresignUploadCommandHandler } from './application/commands/media-presign-upload/media-presign-upload.command.handler';
 import { MediaGetQueryHandler } from './application/queries/media-get/media-get.query.handler';
+import { MediaGetDownloadUrlQueryHandler } from './application/queries/media-get-download-url/media-get-download-url.query.handler';
 import { MediaAccessService } from './application/services/media-access.service';
 import { MediaConfigService } from './infrastructure/config/media-config.service';
 import { LocalUserOwnerResolver } from './infrastructure/owners/local-user-owner.resolver';
@@ -34,6 +35,7 @@ const commandHandlers = [
 
 const queryHandlers = [
   MediaGetQueryHandler,
+  MediaGetDownloadUrlQueryHandler,
   MediaChatAttachmentValidateQueryHandler,
   MediaConversationAvatarValidateQueryHandler,
   MediaLookupInternalQueryHandler,
