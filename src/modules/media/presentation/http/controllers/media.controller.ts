@@ -35,6 +35,7 @@ import { MediaDeleteCommand } from '../../../application/commands/media-delete/m
 import { MediaPresignUploadCommand } from '../../../application/commands/media-presign-upload/media-presign-upload.command';
 import { mediaResourcePath } from '../../../application/media-resource-path';
 import { MediaGetQuery } from '../../../application/queries/media-get/media-get.query';
+import { MediaGetDownloadUrlQuery } from '../../../application/queries/media-get-download-url/media-get-download-url.query';
 import { MediaCompletedResult } from '../../../application/results/media-completed.result';
 import { MediaFileResult } from '../../../application/results/media-file.result';
 import { MediaUploadTicketResult } from '../../../application/results/media-upload-ticket.result';
@@ -42,6 +43,7 @@ import { MediaResponseCodeConstant } from '../constants/media-response-code.cons
 import { MediaPresignUploadRequestDto } from '../requests/media-presign-upload.request.dto';
 import { MediaCompleteUploadResponseDto } from '../responses/media-complete-upload.response.dto';
 import { MediaPresignUploadResponseDto } from '../responses/media-presign-upload.response.dto';
+import { MediaDownloadUrlResponseDto } from '../responses/media-download-url.response.dto';
 
 const ALL_ROLES = [UserRole.LANDLORD, UserRole.TENANT, UserRole.ADMIN];
 
@@ -110,6 +112,32 @@ export class MediaController {
       MediaCompleteUploadCommand.create(user, mediaId),
     );
     return MediaCompleteUploadResponseDto.fromResult(completed);
+  }
+
+  @Get(':mediaId/download-url')
+  @Roles(...ALL_ROLES)
+  @ResponseCode(MediaResponseCodeConstant.MEDIA_DOWNLOAD_URL_ISSUED)
+  @ApiOperation({
+    operationId: 'getMediaDownloadUrl',
+    summary: 'Get a signed download URL for chat media',
+  })
+  @ApiSuccessResponse({
+    code: MediaResponseCodeConstant.MEDIA_DOWNLOAD_URL_ISSUED,
+    dataDto: MediaDownloadUrlResponseDto,
+  })
+  @ApiResponse({ status: 403, description: 'FORBIDDEN' })
+  @ApiResponse({ status: 404, description: 'RESOURCE_NOT_FOUND' })
+  @ApiResponse({ status: 410, description: 'MEDIA_DELETED' })
+  async getDownloadUrl(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('mediaId', ParseUUIDPipe) mediaId: Uuid,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<MediaDownloadUrlResponseDto> {
+    const url: string = await this.queryBus.execute(
+      new MediaGetDownloadUrlQuery(user, mediaId),
+    );
+    response.setHeader('Cache-Control', 'private, no-store');
+    return MediaDownloadUrlResponseDto.fromUrl(url);
   }
 
   /** Public so anonymous visitors can load listing photos; private files still need a token. */
