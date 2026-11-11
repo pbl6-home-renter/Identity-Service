@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Header,
-  HttpCode,
-  HttpStatus,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import {
   ApiBearerAuth,
@@ -24,19 +17,26 @@ import { AuthRefreshTokenRequestDto } from '../requests/auth-refresh-token.reque
 import { AuthRefreshResponseDto } from '../responses/auth-refresh.response.dto';
 import { AuthRefreshCommand } from '../../../application/commands/auth-refresh/auth-refresh.command';
 import { AuthLogoutCommand } from '../../../application/commands/auth-logout/auth-logout.command';
+import { AuthRegisterCommand } from '../../../application/commands/auth-register/auth-register.command';
+import { EmailVerificationConfirmCommand } from '../../../application/commands/email-verification-confirm/email-verification-confirm.command';
+import { EmailVerificationRequestCommand } from '../../../application/commands/email-verification-request/email-verification-request.command';
 import { ApiSuccessResponse } from 'shared/presentation/decorators/api-success-response.decorator';
 import { AuthRegisterRequestDto } from '../requests/auth-register.request.dto';
 import { AuthLoginRequestDto } from '../requests/auth-login.request.dto';
 import { AuthResponseDto } from '../responses/auth.response.dto';
 import { AuthResponseCodeConstant } from '../constants/auth-response-code.constant';
-import { AuthRegisterCommand } from '../../../application/commands/auth-register/auth-register.command';
 import { AuthLoginCommand } from '../../../application/commands/auth-login/auth-login.command';
+import { User } from 'modules/users/domain/entities/user';
 import { RequestPasswordResetRequestDto } from '../requests/request-password-reset.request.dto';
 import { RequestPasswordResetResponseDto } from '../responses/request-password-reset.response.dto';
 import { PasswordResetRequestCommand } from '../../../application/commands/password-reset-request/password-reset-request.command';
 import { UserNotFoundException } from 'modules/users/domain/exceptions/user-not-found.exception';
 import { ResetPasswordRequestDto } from '../requests/reset-password.request.dto';
 import { PasswordResetConfirmCommand } from '../../../application/commands/password-reset-confirm/password-reset-confirm.command';
+import { AuthRegisterPendingResponseDto } from '../responses/auth-register-pending.response.dto';
+import { EmailVerificationConfirmRequestDto } from '../requests/email-verification-confirm.request.dto';
+import { RequestEmailVerificationRequestDto } from '../requests/request-email-verification.request.dto';
+import { RequestEmailVerificationResponseDto } from '../responses/request-email-verification.response.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -46,14 +46,16 @@ export class AuthController {
   @Post('register')
   @Public()
   @HttpCode(HttpStatus.CREATED)
-  @Header('Location', '/api/v1/me')
   @ResponseCode(AuthResponseCodeConstant.USER_REGISTERED)
-  @ApiOperation({ summary: 'Register a new tenant or landlord account' })
+  @ApiOperation({
+    operationId: 'registerAccount',
+    summary: 'Register a new tenant or landlord account',
+  })
   @ApiSuccessResponse({
     status: 201,
     code: AuthResponseCodeConstant.USER_REGISTERED,
-    dataDto: AuthResponseDto,
-    description: 'User registered successfully',
+    dataDto: AuthRegisterPendingResponseDto,
+    description: 'Account created; verify the email address before logging in',
   })
   @ApiResponse({ status: 409, description: 'Email or phone already exists' })
   @ApiResponse({
@@ -62,17 +64,81 @@ export class AuthController {
   })
   async register(
     @Body() request: AuthRegisterRequestDto,
-  ): Promise<AuthResponseDto> {
-    return AuthResponseDto.fromResult(
-      await this.commandBus.execute(AuthRegisterCommand.create(request)),
+  ): Promise<AuthRegisterPendingResponseDto> {
+    return AuthRegisterPendingResponseDto.fromUser(
+      await this.commandBus.execute<AuthRegisterCommand, User>(
+        AuthRegisterRequestDto.toCommand(request),
+      ),
     );
+  }
+
+  @Post('email-verifications')
+  @Public()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    operationId: 'verifyRegisteredEmail',
+    summary: 'Verify email and activate a registered account',
+  })
+  @ApiResponse({
+    status: 204,
+    description: 'Email verified and account activated',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid or already used token' })
+  @ApiResponse({ status: 409, description: 'Email verification token expired' })
+  @ApiResponse({ status: 422, description: 'Validation failed' })
+  @ApiResponse({ status: 500, description: 'Unexpected server error' })
+  async verifyEmail(
+    @Body() request: EmailVerificationConfirmRequestDto,
+  ): Promise<void> {
+    await this.commandBus.execute<EmailVerificationConfirmCommand, void>(
+      EmailVerificationConfirmRequestDto.toCommand(request),
+    );
+  }
+
+  @Post('email-verification-requests')
+  @Public()
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ResponseCode(AuthResponseCodeConstant.EMAIL_VERIFICATION_REQUESTED)
+  @ApiOperation({
+    operationId: 'requestEmailVerification',
+    summary: 'Request another account verification email',
+  })
+  @ApiSuccessResponse({
+    status: HttpStatus.ACCEPTED,
+    code: AuthResponseCodeConstant.EMAIL_VERIFICATION_REQUESTED,
+    dataDto: RequestEmailVerificationResponseDto,
+    description: 'The request was accepted if verification is still required',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Malformed request body',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    description:
+      'EMAIL_REQUIRED, INVALID_EMAIL, UNEXPECTED_FIELD or VALIDATION_FAILED',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Unexpected server error',
+  })
+  async requestEmailVerification(
+    @Body() request: RequestEmailVerificationRequestDto,
+  ): Promise<RequestEmailVerificationResponseDto> {
+    await this.commandBus.execute<EmailVerificationRequestCommand, void>(
+      RequestEmailVerificationRequestDto.toCommand(request),
+    );
+    return RequestEmailVerificationResponseDto.create(true);
   }
 
   @Post('login')
   @Public()
   @HttpCode(HttpStatus.OK)
   @ResponseCode(AuthResponseCodeConstant.SESSION_STARTED)
-  @ApiOperation({ summary: 'Log in with email or phone number' })
+  @ApiOperation({
+    operationId: 'loginAccount',
+    summary: 'Log in with email or phone number',
+  })
   @ApiSuccessResponse({
     status: 200,
     code: AuthResponseCodeConstant.SESSION_STARTED,
@@ -83,7 +149,10 @@ export class AuthController {
     status: 401,
     description: 'AUTH_LOGIN_INVALID_CREDENTIALS',
   })
-  @ApiResponse({ status: 403, description: 'Account locked' })
+  @ApiResponse({
+    status: 403,
+    description: 'EMAIL_NOT_VERIFIED or account locked',
+  })
   async login(@Body() request: AuthLoginRequestDto): Promise<AuthResponseDto> {
     return AuthResponseDto.fromResult(
       await this.commandBus.execute(AuthLoginCommand.create(request)),

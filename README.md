@@ -42,10 +42,10 @@ Service được fork từ [`boilerplate`](https://github.com/pbl6-home-renter/b
 
 ## Tính năng nổi bật
 
-- **Đăng ký / đăng nhập** bằng email hoặc số điện thoại, mật khẩu băm bằng `bcrypt`.
+- **Đăng ký / đăng nhập** bằng email hoặc số điện thoại, mật khẩu băm bằng `bcrypt`; tài khoản chỉ đăng nhập được sau khi xác minh email.
 - **JWT RS256 + JWKS** — access token sống 15 phút, ký bằng private key; public key công bố tại `/api/v1/.well-known/jwks.json` (hỗ trợ `kid` để rotate key).
 - **Refresh token rotation** với `family_id` và **reuse detection**: dùng lại token đã revoke → revoke cả family, trả `401 TOKEN_REUSED`.
-- **Đặt lại mật khẩu** bằng token dùng một lần (TTL 15 phút); Identity render nội dung và phát `email.send_requested` qua outbox để Community gửi SMTP.
+- **Email xác minh và đặt lại mật khẩu** dùng token băm một lần (lần lượt TTL 24 giờ và 15 phút); Identity phát nội dung qua outbox để Community gửi SMTP. Có endpoint gửi lại link xác minh với response trung tính.
 - **Quản trị người dùng** (admin): tìm kiếm, xem chi tiết (kèm thống kê lấy từ Tenancy-Service), cập nhật, khóa/mở khóa, xóa mềm. Token bị thu hồi khi user bị khóa, xóa hoặc đổi mật khẩu.
 - **Hồ sơ chủ trọ** — tài khoản nhận tiền (`payoutAccount`) được cập nhật qua `PATCH /api/v1/me` (chỉ landlord).
 - **Media** — upload hai bước bằng presigned URL lên Cloudflare R2 (bucket public/private), phân quyền theo mục đích sử dụng (`avatar`, `cover_photo`, `cccd_front`, `contract_signed`, …).
@@ -152,7 +152,7 @@ Tất cả biến lấy từ [`.env.example`](.env.example). Bảng dưới ch�
 | `SERVICE_TOKEN` | | Shared secret cho endpoint `internal/*`; trống = tắt |
 | `TENANCY_SERVICE_URL` | | URL nội bộ của Tenancy-Service (`http://localhost:3002`); trống → lời gọi trả `503` |
 | `INTERNAL_HTTP_TIMEOUT_MS` | | Timeout gọi HTTP nội bộ (`3000`) |
-| `PUBLIC_APP_URL` | | Origin của web client để tạo link `/reset-password` (`http://localhost:5173`) |
+| `PUBLIC_APP_URL` | | Origin web client để tạo link reset password và verify email (`http://localhost:5173`) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | | Thông tin Cloudflare R2; trống → endpoint media trả `503` |
 | `R2_PUBLIC_BUCKET`, `R2_PUBLIC_BASE_URL`, `R2_PRIVATE_BUCKET` | | Bucket public (cần bật public access) và private |
 | `MEDIA_UPLOAD_TTL_SECONDS`, `MEDIA_MAX_SIZE_BYTES` | | TTL presigned URL (`900`) và kích thước tối đa (`10485760`) |
@@ -165,7 +165,7 @@ Tất cả biến lấy từ [`.env.example`](.env.example). Bảng dưới ch�
 | `OUTBOX_RELAY_ENABLED`, `OUTBOX_RELAY_INTERVAL_MS`, `OUTBOX_RELAY_BATCH_SIZE` | | Relay outbox (`true`, `1000`, `100`) |
 | `OUTBOX_PUBLISH_TIMEOUT_MS`, `OUTBOX_CLAIM_TIMEOUT_MS`, `OUTBOX_MAX_ATTEMPTS` | | `5000`, `60000`, `10` |
 | `OUTBOX_RETRY_BASE_DELAY_MS`, `OUTBOX_RETRY_MAX_DELAY_MS` | | Backoff `1000` → `60000` |
-| `OUTBOX_RETENTION_MS` | | `900000` (15 phút) — xóa sớm bản ghi đã publish vì email reset chứa link/token |
+| `OUTBOX_RETENTION_MS` | | `900000` (15 phút) — xóa sớm bản ghi đã publish vì email chứa token |
 | `REDIS_HOST`, `REDIS_PORT` | | Có trong `.env.example` nhưng hiện code chưa sử dụng |
 | `DEFAULT_ADMIN_ID`, `DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASSWORD`, `DEFAULT_ADMIN_NAME`, `DEFAULT_ADMIN_PHONE` | | Tài khoản admin do `seed:run` tạo |
 
@@ -193,7 +193,7 @@ Tất cả biến lấy từ [`.env.example`](.env.example). Bảng dưới ch�
 | `npm run outbox:requeue -- <message-id>` | Đưa một outbox message `FAILED` về hàng đợi (bản prod: `outbox:requeue:prod`) |
 
 > [!NOTE]
-> Repo chưa có test script. Husky `pre-commit` chạy `npm run format` rồi `lint-staged` (`oxlint --fix` + `prettier --write`).
+> Unit test domain/application chạy bằng `npm test`; CI dùng `npm run test:ci` (Jest + coverage). Test đặt trong `test/unit/`, ngoài production source.
 
 ## Cấu trúc thư mục
 
@@ -301,6 +301,8 @@ Tất cả route public có prefix `/api/v1` và được gateway định tuyế
 | `POST` | `/api/v1/auth/logout` | Đã đăng nhập (cho phép tài khoản bị khóa) | Revoke family refresh token của phiên |
 | `POST` | `/api/v1/auth/password-reset-requests` | Public | Yêu cầu link đặt lại mật khẩu |
 | `POST` | `/api/v1/auth/password-resets` | Public | Đặt lại mật khẩu bằng token dùng một lần |
+| `POST` | `/api/v1/auth/email-verifications` | Public | Xác minh email và kích hoạt tài khoản |
+| `POST` | `/api/v1/auth/email-verification-requests` | Public | Yêu cầu gửi lại email xác minh |
 | `GET` | `/api/v1/.well-known/jwks.json` | Public | Public key để verify chữ ký JWT |
 | `GET` | `/api/v1/me` | tenant, landlord, admin (cho phép bị khóa) | Lấy thông tin người dùng hiện tại |
 | `PATCH` | `/api/v1/me` | tenant, landlord, admin (cho phép bị khóa) | Cập nhật hồ sơ; landlord có thể gửi `payoutAccount` |
@@ -332,11 +334,12 @@ Các sự kiện được ghi vào bảng outbox trong cùng transaction với t
 | Routing key | Phát sinh khi |
 |---|---|
 | `user.registered` | Đăng ký tài khoản mới |
+| `user.email_verified` | Người dùng xác minh email và tài khoản được kích hoạt |
 | `user.updated` | Người dùng hoặc admin cập nhật thông tin |
 | `user.locked` | Admin khóa tài khoản |
 | `user.unlocked` | Admin mở khóa tài khoản |
 | `user.deleted` | Admin xóa mềm tài khoản |
-| `email.send_requested` | Yêu cầu gửi email đã render; Identity phát sự kiện này cho luồng reset mật khẩu |
+| `email.send_requested` | Yêu cầu gửi email đã render; Identity phát cho email xác minh và email reset mật khẩu |
 | `landlord.payout_account_updated` | Chủ trọ cập nhật tài khoản nhận tiền qua `PATCH /me` |
 
 Khi một message chuyển sang `FAILED`, retry thủ công bằng `npm run outbox:requeue -- <message-id>`.

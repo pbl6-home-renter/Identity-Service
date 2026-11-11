@@ -2,6 +2,7 @@ export const USER_AGGREGATE_TYPE = 'User';
 
 export const USER_EVENTS = {
   REGISTERED: 'user.registered',
+  EMAIL_VERIFIED: 'user.email_verified',
   UPDATED: 'user.updated',
   LOCKED: 'user.locked',
   UNLOCKED: 'user.unlocked',

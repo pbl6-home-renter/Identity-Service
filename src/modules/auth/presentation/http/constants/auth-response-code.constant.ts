@@ -3,4 +3,5 @@ export class AuthResponseCodeConstant {
   static readonly SESSION_STARTED = 'SESSION_STARTED';
   static readonly SESSION_REFRESHED = 'SESSION_REFRESHED';
   static readonly PASSWORD_RESET_REQUESTED = 'PASSWORD_RESET_REQUESTED';
+  static readonly EMAIL_VERIFICATION_REQUESTED = 'EMAIL_VERIFICATION_REQUESTED';
 }

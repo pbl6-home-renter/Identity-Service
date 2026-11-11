@@ -14,6 +14,12 @@ export type GeneratedOpaqueRefreshToken = {
   refreshTokenHash: string;
 };
 
+export type GeneratedEmailVerificationToken = {
+  rawToken: string;
+  tokenHash: string;
+  expiresAt: Date;
+};
+
 export interface ITokenService {
   generateAccessToken(
     userId: Uuid,
@@ -30,4 +36,8 @@ export interface ITokenService {
   generatePasswordResetToken(): PasswordResetTokenGenerated;
 
   hashPasswordResetToken(rawPasswordResetToken: string): string;
+
+  generateEmailVerificationToken(): GeneratedEmailVerificationToken;
+
+  hashEmailVerificationToken(rawToken: string): string;
 }

@@ -16,6 +16,12 @@ import { UserEntity } from 'modules/users/infrastructure/persistence/user.typeor
 import { PasswordResetTokenUsedException } from '../../domain/exceptions/password-reset-token-used.exception';
 import { PasswordResetTokenInvalidException } from '../../domain/exceptions/password-reset-token-invalid.exception';
 import { PasswordResetTokenMapper } from './mappers/password-reset-token.mapper';
+import { EmailVerificationTokenEntity } from './email-verification-token.typeorm-entity';
+import { EmailVerificationTokenInvalidException } from '../../domain/exceptions/email-verification-token-invalid.exception';
+import { EmailVerificationTokenExpiredException } from '../../domain/exceptions/email-verification-token-expired.exception';
+import { UserStatus } from 'shared/domain/enums/user-status.enum';
+import { User } from 'modules/users/domain/entities/user';
+import { UserMapper } from 'modules/users/infrastructure/persistence/mappers/user.mapper';
 
 @Injectable()
 export class AuthRepository implements IAuthRepository {
@@ -24,7 +30,65 @@ export class AuthRepository implements IAuthRepository {
     private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
     @InjectRepository(PasswordResetTokenEntity)
     private readonly passwordResetTokenRepository: Repository<PasswordResetTokenEntity>,
+    @InjectRepository(EmailVerificationTokenEntity)
+    private readonly emailVerificationTokenRepository: Repository<EmailVerificationTokenEntity>,
   ) {}
+
+  async saveEmailVerificationToken(
+    token: { userId: Uuid; tokenHash: string; expiresAt: Date },
+    context?: TransactionContext,
+  ): Promise<void> {
+    await withTransaction(this.emailVerificationTokenRepository, context).save(
+      this.emailVerificationTokenRepository.create(token),
+    );
+  }
+
+  async invalidateEmailVerificationTokens(
+    userId: Uuid,
+    context?: TransactionContext,
+  ): Promise<void> {
+    await withTransaction(
+      this.emailVerificationTokenRepository,
+      context,
+    ).update({ userId, isDeleted: false }, { isDeleted: true });
+  }
+
+  async verifyEmailWithToken(
+    tokenHash: string,
+    now: Date,
+    context: TransactionContext,
+  ): Promise<User> {
+    const tokenRepository = withTransaction(
+      this.emailVerificationTokenRepository,
+      context,
+    );
+    const manager = tokenRepository.manager;
+    const token = await tokenRepository
+      .createQueryBuilder('token')
+      .setLock('pessimistic_write')
+      .where('token.tokenHash = :tokenHash', { tokenHash })
+      .andWhere('token.isDeleted = :isDeleted', { isDeleted: false })
+      .getOne();
+
+    if (!token) throw new EmailVerificationTokenInvalidException();
+    if (token.expiresAt <= now) {
+      throw new EmailVerificationTokenExpiredException();
+    }
+
+    const userEntity = await manager.findOne(UserEntity, {
+      where: { id: token.userId, isDeleted: false },
+      lock: { mode: 'pessimistic_write' },
+    });
+    if (!userEntity || userEntity.status !== UserStatus.PENDING_VERIFICATION) {
+      throw new EmailVerificationTokenInvalidException();
+    }
+
+    const user = UserMapper.toDomain(userEntity);
+    user.verifyEmail();
+    await manager.save(UserEntity, UserMapper.toPersistence(user));
+    await tokenRepository.update(token.id, { isDeleted: true });
+    return user;
+  }
 
   async saveRefreshToken(
     token: RefreshToken,

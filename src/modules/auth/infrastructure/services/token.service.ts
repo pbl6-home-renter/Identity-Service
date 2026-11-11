@@ -7,6 +7,7 @@ import { UserStatus } from 'shared/domain/enums/user-status.enum';
 import { JwtPayload } from 'shared/infrastructure/security/jwt-payload';
 import { JwtConfigService } from '../config/jwt-config.service';
 import type { PasswordResetTokenGenerated } from '../../application/ports/password-reset-token-generated.model';
+import type { GeneratedEmailVerificationToken } from '../../application/ports/token-service.port';
 import {
   GeneratedOpaqueRefreshToken,
   GeneratedRefreshToken,
@@ -19,6 +20,8 @@ export class TokenService implements ITokenService {
   private static readonly REFRESH_TOKEN_BYTES = 32;
   private static readonly PASSWORD_RESET_TOKEN_BYTES = 32;
   private static readonly PASSWORD_RESET_TOKEN_TTL_MS = 15 * 60 * 1000;
+  private static readonly EMAIL_VERIFICATION_TOKEN_BYTES = 32;
+  private static readonly EMAIL_VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
   private readonly privateKey: ReturnType<typeof importPKCS8>;
 
@@ -97,5 +100,22 @@ export class TokenService implements ITokenService {
 
   hashPasswordResetToken(rawPasswordResetToken: string): string {
     return createHash('sha256').update(rawPasswordResetToken).digest('hex');
+  }
+
+  generateEmailVerificationToken(): GeneratedEmailVerificationToken {
+    const rawToken = randomBytes(
+      TokenService.EMAIL_VERIFICATION_TOKEN_BYTES,
+    ).toString('base64url');
+    return {
+      rawToken,
+      tokenHash: this.hashEmailVerificationToken(rawToken),
+      expiresAt: new Date(
+        Date.now() + TokenService.EMAIL_VERIFICATION_TOKEN_TTL_MS,
+      ),
+    };
+  }
+
+  hashEmailVerificationToken(rawToken: string): string {
+    return createHash('sha256').update(rawToken).digest('hex');
   }
 }

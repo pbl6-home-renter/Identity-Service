@@ -33,6 +33,9 @@ export class AuthValidationMessageConstant {
   static readonly REFRESH_TOKEN_MUST_BE_STRING = 'REFRESH_TOKEN_MUST_BE_STRING';
   static readonly REFRESH_TOKEN_NOT_EMPTY = 'REFRESH_TOKEN_NOT_EMPTY';
 
+  static readonly EMAIL_VERIFICATION_TOKEN_REQUIRED =
+    'EMAIL_VERIFICATION_TOKEN_REQUIRED';
+
   static readonly ROLE_REQUIRED = 'ROLE_REQUIRED';
   static readonly ROLE_INVALID = 'ROLE_INVALID';
 

@@ -1,6 +1,7 @@
 import { RefreshToken } from '../entities/refresh-token';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { TransactionContext } from 'shared/domain/repositories/transaction-context';
+import { User } from 'modules/users/domain/entities/user';
 
 export type RefreshTokenRotation =
   | { outcome: 'rotated'; userId: Uuid }
@@ -12,6 +13,22 @@ export type RefreshTokenRotation =
  * `BaseRepository`.
  */
 export interface IAuthRepository {
+  saveEmailVerificationToken(
+    token: { userId: Uuid; tokenHash: string; expiresAt: Date },
+    context?: TransactionContext,
+  ): Promise<void>;
+
+  invalidateEmailVerificationTokens(
+    userId: Uuid,
+    context?: TransactionContext,
+  ): Promise<void>;
+
+  verifyEmailWithToken(
+    tokenHash: string,
+    now: Date,
+    context: TransactionContext,
+  ): Promise<User>;
+
   saveRefreshToken(
     token: RefreshToken,
     context?: TransactionContext,
