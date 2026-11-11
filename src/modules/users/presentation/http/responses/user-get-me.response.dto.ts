@@ -29,6 +29,9 @@ export class UserGetMeResponseDto {
   @ApiProperty({ enum: UserStatus, example: UserStatus.ACTIVE })
   status: UserStatus;
 
+  @ApiProperty({ type: String, format: 'uri', nullable: true })
+  avatarUrl: string | null;
+
   @ApiProperty({ type: PayoutAccountResponseDto, nullable: true })
   payoutAccount: PayoutAccountResponseDto | null;
 
@@ -43,6 +46,7 @@ export class UserGetMeResponseDto {
     dto.phone = user.phone.value;
     dto.role = user.role;
     dto.status = user.status;
+    dto.avatarUrl = null;
     dto.payoutAccount = payoutAccount
       ? PayoutAccountResponseDto.fromDomain(payoutAccount)
       : null;
@@ -50,6 +54,11 @@ export class UserGetMeResponseDto {
   }
 
   static fromResult(result: CurrentUserProfileResult): UserGetMeResponseDto {
-    return UserGetMeResponseDto.create(result.user, result.payoutAccount);
+    const response = UserGetMeResponseDto.create(
+      result.user,
+      result.payoutAccount,
+    );
+    response.avatarUrl = result.avatarUrl;
+    return response;
   }
 }

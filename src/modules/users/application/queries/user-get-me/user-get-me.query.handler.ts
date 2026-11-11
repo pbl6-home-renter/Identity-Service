@@ -1,7 +1,11 @@
 import { Inject } from '@nestjs/common';
-import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import { IQueryHandler, QueryBus, QueryHandler } from '@nestjs/cqrs';
 import { LandlordProfile } from 'modules/landlord-profiles/domain/entities/landlord-profile';
 import { PayoutAccount } from 'modules/landlord-profiles/domain/value-objects/payout-account.vo';
+import { MediaOwnerLookupQuery } from 'modules/media/application/queries/media-owner-lookup/media-owner-lookup.query';
+import { MediaLookupInternalResult } from 'modules/media/application/queries/media-lookup-internal/media-lookup-internal.query.handler';
+import { MediaOwnerType } from 'modules/media/domain/enums/media-owner-type.enum';
+import { MediaPurpose } from 'modules/media/domain/enums/media-purpose.enum';
 import { UserRole } from 'shared/domain/enums/user-role.enum';
 import { UserNotFoundException } from '../../../domain/exceptions/user-not-found.exception';
 import { USERS_DI_TOKEN } from '../../../users.di-token';
@@ -17,6 +21,7 @@ export class UserGetMeQueryHandler implements IQueryHandler<
   constructor(
     @Inject(USERS_DI_TOKEN.QUERY_SERVICE)
     private readonly userQueryService: IUserQueryService,
+    private readonly queryBus: QueryBus,
   ) {}
 
   async execute(query: UserGetMeQuery): Promise<CurrentUserProfileResult> {
@@ -32,8 +37,17 @@ export class UserGetMeQueryHandler implements IQueryHandler<
       user.role === UserRole.LANDLORD
         ? this.toPayoutAccount(landlordProfile)
         : null;
+    const media: MediaLookupInternalResult[] = await this.queryBus.execute(
+      new MediaOwnerLookupQuery(
+        MediaOwnerType.USER,
+        user.id,
+        MediaPurpose.AVATAR,
+      ),
+    );
+    const avatarUrl =
+      media.find((item) => item.purpose === MediaPurpose.AVATAR)?.url ?? null;
 
-    return CurrentUserProfileResult.create(user, payoutAccount);
+    return CurrentUserProfileResult.create(user, payoutAccount, avatarUrl);
   }
 
   private toPayoutAccount(

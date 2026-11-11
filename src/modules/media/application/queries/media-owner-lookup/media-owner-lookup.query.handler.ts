@@ -23,10 +23,13 @@ export class MediaOwnerLookupQueryHandler implements IQueryHandler<
   async execute(
     query: MediaOwnerLookupQuery,
   ): Promise<MediaLookupInternalResult[]> {
-    const media = await this.mediaRepository.findByOwner(
-      query.ownerType,
-      query.ownerId,
-    );
+    const media = query.purpose
+      ? await this.mediaRepository.findUploadedByOwner(
+          query.ownerType,
+          query.ownerId,
+          query.purpose,
+        )
+      : await this.mediaRepository.findByOwner(query.ownerType, query.ownerId);
     return media
       .filter((item) => item.status === MediaStatus.UPLOADED)
       .map((item) => ({
