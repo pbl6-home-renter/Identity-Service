@@ -1,5 +1,7 @@
 import { DomainEvent } from 'shared/domain/base/domain-event';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
+import { UserRole } from 'shared/domain/enums/user-role.enum';
+import { UserStatus } from 'shared/domain/enums/user-status.enum';
 import {
   USER_AGGREGATE_TYPE,
   USER_EVENTS,
@@ -15,6 +17,8 @@ export class UserUpdatedEvent implements DomainEvent {
     readonly userId: Uuid,
     readonly name: string,
     readonly phone: string,
+    readonly role: UserRole,
+    readonly status: UserStatus,
   ) {}
 
   get aggregateId(): Uuid {
@@ -22,6 +26,12 @@ export class UserUpdatedEvent implements DomainEvent {
   }
 
   get payload(): Record<string, unknown> {
-    return { userId: this.userId, name: this.name, phone: this.phone };
+    return {
+      userId: this.userId,
+      name: this.name,
+      phone: this.phone,
+      role: this.role,
+      status: this.status,
+    };
   }
 }

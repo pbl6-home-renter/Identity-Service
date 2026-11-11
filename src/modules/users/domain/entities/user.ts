@@ -94,7 +94,13 @@ export class User extends AggregateRoot {
 
     if (updated.name !== this.name || !updated.phone.equals(this.phone)) {
       updated.addDomainEvent(
-        new UserUpdatedEvent(updated.id, updated.name, updated.phone.value),
+        new UserUpdatedEvent(
+          updated.id,
+          updated.name,
+          updated.phone.value,
+          updated.role,
+          updated.status,
+        ),
       );
     }
     return updated;
