@@ -342,6 +342,8 @@ Các sự kiện được ghi vào bảng outbox trong cùng transaction với t
 | `email.send_requested` | Yêu cầu gửi email đã render; Identity phát cho email xác minh và email reset mật khẩu |
 | `landlord.payout_account_updated` | Chủ trọ cập nhật tài khoản nhận tiền qua `PATCH /me` |
 
+Tenancy nhận `user.registered`, `user.updated`, `user.deleted` qua queue `tenancy.identity-lifecycle`. Registered/updated gửi `userId`, `role`, `phone` đã chuẩn hóa và `status` để cập nhật projection; deleted dùng `userId` để bỏ mapping tra cứu, giữ liên kết ContractMember đã có.
+
 Khi một message chuyển sang `FAILED`, retry thủ công bằng `npm run outbox:requeue -- <message-id>`.
 
 ## Triển khai
