@@ -15,6 +15,8 @@ import { InvalidEmailException } from 'modules/users/domain/exceptions/invalid-e
 import { InvalidPhoneException } from 'modules/users/domain/exceptions/invalid-phone.exception';
 import { RefreshToken } from '../../../domain/entities/refresh-token';
 import { AuthLoginInvalidCredentialsException } from '../../../domain/exceptions/auth-login-invalid-credentials.exception';
+import { UserStatus } from 'shared/domain/enums/user-status.enum';
+import { EmailNotVerifiedException } from '../../../domain/exceptions/email-not-verified.exception';
 
 @CommandHandler(AuthLoginCommand)
 export class AuthLoginCommandHandler implements ICommandHandler<
@@ -60,6 +62,10 @@ export class AuthLoginCommandHandler implements ICommandHandler<
     );
     if (!isPasswordValid) {
       throw new AuthLoginInvalidCredentialsException();
+    }
+
+    if (user.status === UserStatus.PENDING_VERIFICATION) {
+      throw new EmailNotVerifiedException();
     }
 
     return user;

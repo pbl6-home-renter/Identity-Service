@@ -14,6 +14,9 @@ import { UserUpdatedEvent } from '../events/user-updated.event';
 import { UserLockedEvent } from '../events/user-locked.event';
 import { UserUnlockedEvent } from '../events/user-unlocked.event';
 import { UserDeletedEvent } from '../events/user-deleted.event';
+import { UserLockPendingVerificationException } from '../exceptions/user-lock-pending-verification.exception';
+import { UserEmailVerifiedEvent } from '../events/user-email-verified.event';
+import { UserEmailVerificationNotPendingException } from '../exceptions/user-email-verification-not-pending.exception';
 
 export class User extends AggregateRoot {
   private constructor(
@@ -49,6 +52,9 @@ export class User extends AggregateRoot {
     if (this._status === UserStatus.LOCKED) {
       throw new UserLockAlreadyLockedException();
     }
+    if (this._status === UserStatus.PENDING_VERIFICATION) {
+      throw new UserLockPendingVerificationException();
+    }
     this._status = UserStatus.LOCKED;
     this._lockReason = reason;
     const lockedAt = new Date();
@@ -66,6 +72,21 @@ export class User extends AggregateRoot {
     this._lockReason = null;
     this._lockedAt = null;
     this.addDomainEvent(new UserUnlockedEvent(this.id, this._status));
+  }
+
+  verifyEmail(): void {
+    if (this._status !== UserStatus.PENDING_VERIFICATION) {
+      throw new UserEmailVerificationNotPendingException();
+    }
+    this._status = UserStatus.ACTIVE;
+    this.addDomainEvent(
+      new UserEmailVerifiedEvent(
+        this.id,
+        this.phone.value,
+        this.role,
+        this._status,
+      ),
+    );
   }
 
   delete(): void {

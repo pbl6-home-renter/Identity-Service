@@ -13,12 +13,16 @@ import { AuthLoginCommandHandler } from './application/commands/auth-login/auth-
 import { AuthController } from './presentation/http/controllers/auth.controller';
 import { PasswordResetRequestCommandHandler } from './application/commands/password-reset-request/password-reset-request.command.handler';
 import { PasswordResetTokenEntity } from './infrastructure/persistence/password-reset-token.typeorm-entity';
+import { EmailVerificationTokenEntity } from './infrastructure/persistence/email-verification-token.typeorm-entity';
+import { EmailVerificationConfirmCommandHandler } from './application/commands/email-verification-confirm/email-verification-confirm.command.handler';
+import { EmailVerificationRequestCommandHandler } from './application/commands/email-verification-request/email-verification-request.command.handler';
 import { PasswordResetTokenRepository } from './infrastructure/persistence/password-reset-token.repository';
 import { PasswordResetConfirmCommandHandler } from './application/commands/password-reset-confirm/password-reset-confirm.command.handler';
 import { JwksController } from './presentation/http/controllers/jwks.controller';
 import { AuthRefreshCommandHandler } from './application/commands/auth-refresh/auth-refresh.command.handler';
 import { AuthLogoutCommandHandler } from './application/commands/auth-logout/auth-logout.command.handler';
 import { PasswordResetEmailComposer } from './infrastructure/services/password-reset-email.composer';
+import { EmailVerificationEmailComposer } from './infrastructure/services/email-verification-email.composer';
 
 import { AuthRevokeTokensOnUserEventsHandler } from './application/event-handlers/auth-revoke-tokens-on-user-events.event.handler';
 
@@ -29,13 +33,19 @@ const commandHandlers = [
   AuthLogoutCommandHandler,
   PasswordResetRequestCommandHandler,
   PasswordResetConfirmCommandHandler,
+  EmailVerificationConfirmCommandHandler,
+  EmailVerificationRequestCommandHandler,
 ];
 const eventHandlers = [AuthRevokeTokensOnUserEventsHandler];
 
 @Module({
   imports: [
     CqrsModule,
-    TypeOrmModule.forFeature([RefreshTokenEntity, PasswordResetTokenEntity]),
+    TypeOrmModule.forFeature([
+      RefreshTokenEntity,
+      PasswordResetTokenEntity,
+      EmailVerificationTokenEntity,
+    ]),
     UsersModule,
     OutboxModule,
   ],
@@ -44,9 +54,14 @@ const eventHandlers = [AuthRevokeTokensOnUserEventsHandler];
     JwtConfigService,
     TokenService,
     PasswordResetEmailComposer,
+    EmailVerificationEmailComposer,
     {
       provide: AUTH_DI_TOKEN.PASSWORD_RESET_EMAIL_COMPOSER,
       useExisting: PasswordResetEmailComposer,
+    },
+    {
+      provide: AUTH_DI_TOKEN.EMAIL_VERIFICATION_EMAIL_COMPOSER,
+      useExisting: EmailVerificationEmailComposer,
     },
     {
       provide: AUTH_DI_TOKEN.TOKEN_SERVICE,
