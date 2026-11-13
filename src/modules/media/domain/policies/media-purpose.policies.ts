@@ -130,7 +130,7 @@ export const MEDIA_PURPOSE_POLICIES: Readonly<
   [MediaPurpose.CHAT_ATTACHMENT]: {
     ownerTypes: [MediaOwnerType.CONVERSATION],
     visibility: MediaVisibility.PRIVATE,
-    contentTypes: IMAGE_CONTENT_TYPES,
+    contentTypes: [...IMAGE_AND_PDF_CONTENT_TYPES, MediaContentType.MP4, MediaContentType.WEBM],
     canUpload: isParticipant,
     canRead: isParticipant,
     ownerAuthorizationRequired: true,

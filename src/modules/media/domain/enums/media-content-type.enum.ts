@@ -4,4 +4,6 @@ export enum MediaContentType {
   PNG = 'image/png',
   WEBP = 'image/webp',
   PDF = 'application/pdf',
+  MP4 = 'video/mp4',
+  WEBM = 'video/webm',
 }
