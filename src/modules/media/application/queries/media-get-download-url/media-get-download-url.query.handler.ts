@@ -1,4 +1,4 @@
-import { Inject } from '@nestjs/common';
+﻿import { Inject } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { MediaPurpose } from '../../../domain/enums/media-purpose.enum';
 import { MediaNotFoundException } from '../../../domain/exceptions/media-not-found.exception';
@@ -11,7 +11,7 @@ import { MediaGetDownloadUrlQuery } from './media-get-download-url.query';
 @QueryHandler(MediaGetDownloadUrlQuery)
 export class MediaGetDownloadUrlQueryHandler implements IQueryHandler<
   MediaGetDownloadUrlQuery,
-  string
+  { url: string; fileName: string; contentType: string }
 > {
   constructor(
     @Inject(MEDIA_DI_TOKEN.REPOSITORY)
@@ -21,7 +21,7 @@ export class MediaGetDownloadUrlQueryHandler implements IQueryHandler<
     private readonly access: MediaAccessService,
   ) {}
 
-  async execute({ actor, mediaId }: MediaGetDownloadUrlQuery): Promise<string> {
+  async execute({ actor, mediaId }: MediaGetDownloadUrlQuery): Promise<{ url: string; fileName: string; contentType: string }> {
     const media = await this.mediaRepository.findById(mediaId);
     if (!media) {
       throw new MediaNotFoundException();
@@ -37,6 +37,6 @@ export class MediaGetDownloadUrlQueryHandler implements IQueryHandler<
       throw new MediaNotFoundException();
     }
 
-    return this.storage.createDownloadUrl(media);
+    return { url: await this.storage.createDownloadUrl(media), fileName: media.fileName, contentType: media.contentType };
   }
 }

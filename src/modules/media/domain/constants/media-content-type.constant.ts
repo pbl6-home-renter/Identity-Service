@@ -24,6 +24,8 @@ export const CONTENT_TYPE_EXTENSIONS: Readonly<
   [MediaContentType.PNG]: ['png'],
   [MediaContentType.WEBP]: ['webp'],
   [MediaContentType.PDF]: ['pdf'],
+  [MediaContentType.MP4]: ['mp4'],
+  [MediaContentType.WEBM]: ['webm'],
 };
 
 export const CONTENT_TYPE_FILE_TYPES: Readonly<
@@ -33,4 +35,6 @@ export const CONTENT_TYPE_FILE_TYPES: Readonly<
   [MediaContentType.PNG]: MediaFileType.IMAGE,
   [MediaContentType.WEBP]: MediaFileType.IMAGE,
   [MediaContentType.PDF]: MediaFileType.DOCUMENT,
+  [MediaContentType.MP4]: MediaFileType.VIDEO,
+  [MediaContentType.WEBM]: MediaFileType.VIDEO,
 };

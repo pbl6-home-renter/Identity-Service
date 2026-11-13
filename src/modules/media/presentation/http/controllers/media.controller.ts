@@ -133,11 +133,11 @@ export class MediaController {
     @Param('mediaId', ParseUUIDPipe) mediaId: Uuid,
     @Res({ passthrough: true }) response: Response,
   ): Promise<MediaDownloadUrlResponseDto> {
-    const url: string = await this.queryBus.execute(
+    const result: MediaDownloadUrlResponseDto = await this.queryBus.execute(
       new MediaGetDownloadUrlQuery(user, mediaId),
     );
     response.setHeader('Cache-Control', 'private, no-store');
-    return MediaDownloadUrlResponseDto.fromUrl(url);
+    return MediaDownloadUrlResponseDto.fromResult(result);
   }
 
   /** Public so anonymous visitors can load listing photos; private files still need a token. */

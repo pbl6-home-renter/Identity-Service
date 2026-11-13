@@ -9,6 +9,7 @@ import { MediaChatAttachmentValidateQuery } from './media-chat-attachment-valida
 
 export interface MediaChatAttachmentValidationResult {
   valid: boolean;
+  fileType: string | null;
 }
 
 @QueryHandler(MediaChatAttachmentValidateQuery)
@@ -26,6 +27,7 @@ export class MediaChatAttachmentValidateQueryHandler implements IQueryHandler<
   ): Promise<MediaChatAttachmentValidationResult> {
     const media = await this.mediaRepository.findById(query.mediaId);
     return {
+      fileType: media?.fileType ?? null,
       valid:
         media !== null &&
         !media.isDeleted &&
