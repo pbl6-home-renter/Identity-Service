@@ -14,6 +14,9 @@ import { CurrentUser } from 'shared/presentation/decorators/auth/current-user.de
 import { ApiSuccessResponse } from 'shared/presentation/decorators/api-success-response.decorator';
 import { ResponseCode } from 'shared/presentation/decorators/response-code.decorator';
 import { PaginatedResponseDto } from 'shared/presentation/pagination/paginated.response.dto';
+import { MediaUserAvatarLookupQuery } from 'modules/media/application/queries/media-user-avatar-lookup/media-user-avatar-lookup.query';
+import { UserAvatarUrlMap } from 'modules/media/application/queries/media-user-avatar-lookup/media-user-avatar-lookup.query.handler';
+import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { UserDirectoryEntryModel } from '../../../application/queries/models/user-directory-entry.model';
 import { UserDirectoryListQuery } from '../../../application/queries/user-directory-list/user-directory-list.query';
 import { UserResponseCodeConstant } from '../constants/user-response-code.constant';
@@ -56,11 +59,21 @@ export class UserDirectoryController {
       await this.queryBus.execute(
         UserDirectoryListQuery.create(user.id, query),
       );
+    const avatars = await this.lookupAvatars(
+      result.data.map((entry) => entry.id),
+    );
     return PaginatedResponseDto.create({
       data: result.data.map((entry) =>
-        UserDirectoryListResponseDto.fromModel(entry),
+        UserDirectoryListResponseDto.fromModel(
+          entry,
+          avatars.get(entry.id) ?? null,
+        ),
       ),
       pagination: result.pagination,
     });
+  }
+
+  private lookupAvatars(userIds: readonly Uuid[]): Promise<UserAvatarUrlMap> {
+    return this.queryBus.execute(MediaUserAvatarLookupQuery.create(userIds));
   }
 }

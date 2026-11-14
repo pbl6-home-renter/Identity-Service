@@ -24,6 +24,7 @@ import { MediaChatAttachmentValidateQueryHandler } from './application/queries/m
 import { MediaConversationAvatarValidateQueryHandler } from './application/queries/media-conversation-avatar-validate/media-conversation-avatar-validate.query.handler';
 import { MediaLookupInternalQueryHandler } from './application/queries/media-lookup-internal/media-lookup-internal.query.handler';
 import { MediaOwnerLookupQueryHandler } from './application/queries/media-owner-lookup/media-owner-lookup.query.handler';
+import { MediaUserAvatarLookupQueryHandler } from './application/queries/media-user-avatar-lookup/media-user-avatar-lookup.query.handler';
 import { InboxModule } from 'modules/inbox/inbox.module';
 import { MediaOwnerDeletedSubscriber } from './presentation/messaging/media-owner-deleted.subscriber';
 
@@ -40,6 +41,7 @@ const queryHandlers = [
   MediaConversationAvatarValidateQueryHandler,
   MediaLookupInternalQueryHandler,
   MediaOwnerLookupQueryHandler,
+  MediaUserAvatarLookupQueryHandler,
 ];
 
 const ownerResolvers = [
