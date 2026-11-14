@@ -21,7 +21,11 @@ export class MediaGetDownloadUrlQueryHandler implements IQueryHandler<
     private readonly access: MediaAccessService,
   ) {}
 
-  async execute({ actor, mediaId }: MediaGetDownloadUrlQuery): Promise<{ url: string; fileName: string; contentType: string }> {
+  async execute({ actor, mediaId }: MediaGetDownloadUrlQuery): Promise<{
+    url: string;
+    fileName: string;
+    contentType: string;
+  }> {
     const media = await this.mediaRepository.findById(mediaId);
     if (!media) {
       throw new MediaNotFoundException();
@@ -37,6 +41,10 @@ export class MediaGetDownloadUrlQueryHandler implements IQueryHandler<
       throw new MediaNotFoundException();
     }
 
-    return { url: await this.storage.createDownloadUrl(media), fileName: media.fileName, contentType: media.contentType };
+    return {
+      url: await this.storage.createDownloadUrl(media),
+      fileName: media.fileName,
+      contentType: media.contentType,
+    };
   }
 }

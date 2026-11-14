@@ -74,6 +74,17 @@ export class UserRepository implements IUserRepository {
     return UserMapper.toDomain(raw);
   }
 
+  async findByIdForUpdate(
+    id: Uuid,
+    context: TransactionContext,
+  ): Promise<User | null> {
+    const raw = await withTransaction(this.repository, context).findOne({
+      where: { id, isDeleted: false },
+      lock: { mode: 'pessimistic_write' },
+    });
+    return raw ? UserMapper.toDomain(raw) : null;
+  }
+
   async findByIdIncludingDeleted(id: Uuid): Promise<User | null> {
     const raw = await this.repository.findOne({ where: { id } });
     return raw ? UserMapper.toDomain(raw) : null;
