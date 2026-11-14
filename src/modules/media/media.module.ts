@@ -14,6 +14,7 @@ import { MediaOwnerResolverRegistry } from './infrastructure/owners/media-owner-
 import { TenancyOwnerResolver } from './infrastructure/owners/tenancy-owner.resolver';
 import { UnavailableOwnerResolver } from './infrastructure/owners/unavailable-owner.resolver';
 import { CommunityConversationOwnerResolver } from './infrastructure/owners/community-conversation-owner.resolver';
+import { CommunityIssueOwnerResolver } from './infrastructure/owners/community-issue-owner.resolver';
 import { MediaRepository } from './infrastructure/persistence/media.repository';
 import { MediaEntity } from './infrastructure/persistence/media.typeorm-entity';
 import { R2ObjectStorage } from './infrastructure/storage/r2-object-storage';
@@ -49,6 +50,7 @@ const ownerResolvers = [
   TenancyOwnerResolver,
   UnavailableOwnerResolver,
   CommunityConversationOwnerResolver,
+  CommunityIssueOwnerResolver,
 ];
 
 @Module({
