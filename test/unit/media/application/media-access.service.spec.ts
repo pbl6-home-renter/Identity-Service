@@ -7,6 +7,7 @@ import { MediaOwnerType } from 'modules/media/domain/enums/media-owner-type.enum
 import { MediaPurpose } from 'modules/media/domain/enums/media-purpose.enum';
 import { MediaUnauthenticatedException } from 'modules/media/domain/exceptions/media-unauthenticated.exception';
 import { MediaCannotDeleteException } from 'modules/media/domain/exceptions/media-cannot-delete.exception';
+import { MediaForbiddenException } from 'modules/media/domain/exceptions/media-forbidden.exception';
 import { OwnerSnapshot } from 'modules/media/domain/value-objects/owner-snapshot';
 import { MediaActor } from 'modules/media/domain/value-objects/media-actor';
 import { UserRole } from 'shared/domain/enums/user-role.enum';
@@ -34,6 +35,55 @@ function createMedia(input: {
 }
 
 describe('MediaAccessService', () => {
+  it('rechecks issue access for the uploader when reading or completing a photo', async () => {
+    const actor: MediaActor = { id: generateUuid(), role: UserRole.TENANT };
+    const ownerId = generateUuid();
+    let owner: OwnerSnapshot = {
+      ownerType: MediaOwnerType.ISSUE_REPORT,
+      ownerId,
+      landlordId: null,
+      participantUserIds: [actor.id],
+      status: 'open',
+    };
+    const resolver: IMediaOwnerResolver = {
+      resolve: jest.fn(async () => owner),
+    };
+    const service = new MediaAccessService(resolver);
+    const photo = createMedia({
+      purpose: MediaPurpose.ISSUE_PHOTO,
+      ownerType: MediaOwnerType.ISSUE_REPORT,
+      ownerId,
+      uploaderId: actor.id,
+    });
+
+    await service.assertCanComplete(actor, photo);
+    await service.assertCanRead(actor, photo);
+    owner = { ...owner, participantUserIds: [] };
+    await expect(service.assertCanComplete(actor, photo)).rejects.toThrow(
+      MediaForbiddenException,
+    );
+    await expect(service.assertCanRead(actor, photo)).rejects.toThrow(
+      MediaForbiddenException,
+    );
+  });
+
+  it('does not let another authorized participant complete an upload', async () => {
+    const actor: MediaActor = { id: generateUuid(), role: UserRole.TENANT };
+    const resolver: IMediaOwnerResolver = {
+      resolve: jest.fn(async () => null),
+    };
+    const service = new MediaAccessService(resolver);
+    const photo = createMedia({
+      purpose: MediaPurpose.ISSUE_PHOTO,
+      ownerType: MediaOwnerType.ISSUE_REPORT,
+      uploaderId: generateUuid(),
+    });
+    await expect(service.assertCanComplete(actor, photo)).rejects.toThrow(
+      MediaForbiddenException,
+    );
+    expect(resolver.resolve).not.toHaveBeenCalled();
+  });
+
   it('resolves the owner for upload authorization and skips lookup for ordinary completion', async () => {
     const actor: MediaActor = { id: generateUuid(), role: UserRole.TENANT };
     const owner: OwnerSnapshot = {
