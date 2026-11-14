@@ -58,6 +58,7 @@ function createUserRepository(user: User | null): IUserRepository {
   return {
     save: jest.fn(async () => undefined),
     findById: jest.fn(async () => user),
+    findByIdForUpdate: jest.fn(async () => user),
     delete: jest.fn(async () => undefined),
     updatePassword: jest.fn(async () => undefined),
     findByIdIncludingDeleted: jest.fn(async () => user),

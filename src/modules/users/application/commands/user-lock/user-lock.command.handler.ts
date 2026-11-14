@@ -32,13 +32,16 @@ export class UserLockCommandHandler implements ICommandHandler<
       throw new UserLockCannotSelfException();
     }
 
-    const user = await this.userRepository.findById(command.userId);
-    if (!user) {
-      throw new UserNotFoundException();
-    }
+    return this.unitOfWork.run(async (context) => {
+      const user = await this.userRepository.findByIdForUpdate(
+        command.userId,
+        context,
+      );
+      if (!user) {
+        throw new UserNotFoundException();
+      }
 
-    user.lock(command.lockReason);
-    await this.unitOfWork.run(async (context) => {
+      user.lock(command.lockReason);
       await this.userRepository.save(user, context);
 
       await this.outboxRepository.append(
@@ -47,8 +50,7 @@ export class UserLockCommandHandler implements ICommandHandler<
           .map((event) => OutboxMessage.fromDomainEvent(event)),
         context,
       );
+      return user;
     });
-
-    return user;
   }
 }
