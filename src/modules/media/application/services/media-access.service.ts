@@ -28,15 +28,15 @@ export class MediaAccessService {
   }
 
   async assertCanComplete(actor: MediaActor, media: Media): Promise<void> {
+    if (!MediaAccessPolicy.canComplete(actor, media)) {
+      throw new MediaForbiddenException();
+    }
     if (media.policy.ownerAuthorizationRequired) {
       const owner = await this.findOwner(media, actor.id);
       if (!owner || !MediaAccessPolicy.canUpload(actor, media, owner)) {
         throw new MediaForbiddenException();
       }
       return;
-    }
-    if (!MediaAccessPolicy.canComplete(actor, media)) {
-      throw new MediaForbiddenException();
     }
   }
 

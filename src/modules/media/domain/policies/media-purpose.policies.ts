@@ -125,12 +125,18 @@ export const MEDIA_PURPOSE_POLICIES: Readonly<
     contentTypes: IMAGE_CONTENT_TYPES,
     canUpload: anyOf(isParticipant, isOwnerLandlord),
     canRead: anyOf(isParticipant, isOwnerLandlord),
+    ownerAuthorizationRequired: true,
+    allowDelete: false,
   },
 
   [MediaPurpose.CHAT_ATTACHMENT]: {
     ownerTypes: [MediaOwnerType.CONVERSATION],
     visibility: MediaVisibility.PRIVATE,
-    contentTypes: [...IMAGE_AND_PDF_CONTENT_TYPES, MediaContentType.MP4, MediaContentType.WEBM],
+    contentTypes: [
+      ...IMAGE_AND_PDF_CONTENT_TYPES,
+      MediaContentType.MP4,
+      MediaContentType.WEBM,
+    ],
     canUpload: isParticipant,
     canRead: isParticipant,
     ownerAuthorizationRequired: true,
