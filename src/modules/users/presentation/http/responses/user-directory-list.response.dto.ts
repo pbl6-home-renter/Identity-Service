@@ -12,12 +12,22 @@ export class UserDirectoryListResponseDto {
   @ApiProperty({ example: 'Nguyễn Văn An' })
   name: string;
 
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: 'https://media.example.com/avatars/user.jpg',
+    description: 'URL công khai của avatar; null nếu user chưa có avatar.',
+  })
+  avatarUrl: string | null;
+
   static fromModel(
     entry: UserDirectoryEntryModel,
+    avatarUrl: string | null,
   ): UserDirectoryListResponseDto {
     const dto = new UserDirectoryListResponseDto();
     dto.id = entry.id;
     dto.name = entry.name;
+    dto.avatarUrl = avatarUrl;
     return dto;
   }
 }

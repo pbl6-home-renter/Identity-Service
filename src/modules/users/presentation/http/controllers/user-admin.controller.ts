@@ -42,7 +42,10 @@ import { UserUpdateAdminCommand } from '../../../application/commands/user-updat
 import { UserLockCommand } from '../../../application/commands/user-lock/user-lock.command';
 import { UserUnlockCommand } from '../../../application/commands/user-unlock/user-unlock.command';
 import { UserDeleteCommand } from '../../../application/commands/user-delete/user-delete.command';
+import { MediaUserAvatarLookupQuery } from 'modules/media/application/queries/media-user-avatar-lookup/media-user-avatar-lookup.query';
+import { UserAvatarUrlMap } from 'modules/media/application/queries/media-user-avatar-lookup/media-user-avatar-lookup.query.handler';
 import { User } from '../../../domain/entities/user';
+import { UserDetailResult } from '../../../application/results/user-detail.result';
 
 @ApiTags('User')
 @ApiBearerAuth()
@@ -74,9 +77,12 @@ export class UserAdminController {
     const result: PaginatedResult<User> = await this.queryBus.execute(
       UserListAdminQuery.create(query),
     );
+    const avatars = await this.lookupAvatars(
+      result.data.map((user) => user.id),
+    );
     return PaginatedResponseDto.create({
       data: result.data.map((user) =>
-        UserListAdminResponseDto.fromDomain(user),
+        UserListAdminResponseDto.fromDomain(user, avatars.get(user.id) ?? null),
       ),
       pagination: result.pagination,
     });
@@ -100,8 +106,13 @@ export class UserAdminController {
   async getUserDetail(
     @Param('userId', ParseUUIDPipe) userId: Uuid,
   ): Promise<UserGetDetailAdminResponseDto> {
+    const result: UserDetailResult = await this.queryBus.execute(
+      UserGetDetailAdminQuery.create(userId),
+    );
+    const avatars = await this.lookupAvatars([userId]);
     return UserGetDetailAdminResponseDto.fromResult(
-      await this.queryBus.execute(UserGetDetailAdminQuery.create(userId)),
+      result,
+      avatars.get(userId) ?? null,
     );
   }
 
@@ -222,5 +233,9 @@ export class UserAdminController {
     @Param('userId', ParseUUIDPipe) userId: Uuid,
   ): Promise<void> {
     await this.commandBus.execute(UserDeleteCommand.create(admin.id, userId));
+  }
+
+  private lookupAvatars(userIds: readonly Uuid[]): Promise<UserAvatarUrlMap> {
+    return this.queryBus.execute(MediaUserAvatarLookupQuery.create(userIds));
   }
 }

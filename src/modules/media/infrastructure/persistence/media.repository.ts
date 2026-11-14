@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { TransactionContext } from 'shared/domain/repositories/transaction-context';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { withTransaction } from 'shared/infrastructure/database/transaction/typeorm-transaction-context';
@@ -60,6 +60,25 @@ export class MediaRepository implements IMediaRepository {
       where: {
         ownerType,
         ownerId,
+        purpose,
+        status: MediaStatus.UPLOADED,
+        isDeleted: false,
+      },
+    });
+
+    return rows.map((raw) => MediaMapper.toDomain(raw));
+  }
+
+  async findUploadedByOwners(
+    ownerType: MediaOwnerType,
+    ownerIds: readonly Uuid[],
+    purpose: MediaPurpose,
+  ): Promise<Media[]> {
+    if (ownerIds.length === 0) return [];
+    const rows = await this.repository.find({
+      where: {
+        ownerType,
+        ownerId: In([...ownerIds]),
         purpose,
         status: MediaStatus.UPLOADED,
         isDeleted: false,

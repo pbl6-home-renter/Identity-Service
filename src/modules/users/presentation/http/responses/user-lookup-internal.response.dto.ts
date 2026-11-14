@@ -29,7 +29,18 @@ export class UserLookupInternalResponseDto {
   @ApiProperty({ example: false })
   isDeleted: boolean;
 
-  static fromDomain(user: User): UserLookupInternalResponseDto {
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: 'https://media.example.com/avatars/user.jpg',
+    description: 'URL công khai của avatar; null nếu user chưa có avatar.',
+  })
+  avatarUrl: string | null;
+
+  static fromDomain(
+    user: User,
+    avatarUrl: string | null,
+  ): UserLookupInternalResponseDto {
     const dto = new UserLookupInternalResponseDto();
     dto.id = user.id;
     dto.name = user.name;
@@ -38,6 +49,7 @@ export class UserLookupInternalResponseDto {
     dto.role = user.role;
     dto.status = user.status;
     dto.isDeleted = user.isDeleted;
+    dto.avatarUrl = avatarUrl;
     return dto;
   }
 }

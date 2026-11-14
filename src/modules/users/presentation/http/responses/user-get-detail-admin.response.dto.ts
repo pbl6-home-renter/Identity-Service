@@ -56,7 +56,18 @@ export class UserGetDetailAdminResponseDto {
   })
   activeContractCount: number | null;
 
-  static fromResult(result: UserDetailResult): UserGetDetailAdminResponseDto {
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: 'https://media.example.com/avatars/user.jpg',
+    description: 'URL công khai của avatar; null nếu user chưa có avatar.',
+  })
+  avatarUrl: string | null;
+
+  static fromResult(
+    result: UserDetailResult,
+    avatarUrl: string | null,
+  ): UserGetDetailAdminResponseDto {
     const dto = new UserGetDetailAdminResponseDto();
     dto.id = result.user.id;
     dto.name = result.user.name;
@@ -71,6 +82,7 @@ export class UserGetDetailAdminResponseDto {
       : null;
     dto.buildingCount = result.buildingCount;
     dto.activeContractCount = result.activeContractCount;
+    dto.avatarUrl = avatarUrl;
     return dto;
   }
 }

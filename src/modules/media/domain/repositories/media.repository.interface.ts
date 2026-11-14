@@ -22,4 +22,11 @@ export interface IMediaRepository {
     ownerId: Uuid,
     purpose: MediaPurpose,
   ): Promise<Media[]>;
+
+  /** Live, uploaded files of many owners for one purpose, in one read. */
+  findUploadedByOwners(
+    ownerType: MediaOwnerType,
+    ownerIds: readonly Uuid[],
+    purpose: MediaPurpose,
+  ): Promise<Media[]>;
 }

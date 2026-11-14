@@ -26,7 +26,18 @@ export class UserListAdminResponseDto {
   @ApiProperty({ enum: UserStatus, example: UserStatus.ACTIVE })
   status: UserStatus;
 
-  static fromDomain(user: User): UserListAdminResponseDto {
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: 'https://media.example.com/avatars/user.jpg',
+    description: 'URL công khai của avatar; null nếu user chưa có avatar.',
+  })
+  avatarUrl: string | null;
+
+  static fromDomain(
+    user: User,
+    avatarUrl: string | null,
+  ): UserListAdminResponseDto {
     const dto = new UserListAdminResponseDto();
     dto.id = user.id;
     dto.name = user.name;
@@ -34,6 +45,7 @@ export class UserListAdminResponseDto {
     dto.phone = user.phone.value;
     dto.role = user.role;
     dto.status = user.status;
+    dto.avatarUrl = avatarUrl;
     return dto;
   }
 }
