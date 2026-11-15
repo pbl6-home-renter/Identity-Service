@@ -11,13 +11,14 @@ export class UserUnlockedEvent implements DomainEvent {
   readonly eventType = USER_EVENTS.UNLOCKED;
   readonly routingKey = USER_EVENTS.UNLOCKED;
   readonly aggregateType = USER_AGGREGATE_TYPE;
-  readonly occurredAt = new Date();
 
   constructor(
     readonly userId: Uuid,
     readonly status: UserStatus,
     readonly role: UserRole,
     readonly phone: string,
+    readonly lockedAt: Date | null = null,
+    readonly occurredAt = new Date(),
   ) {}
 
   get aggregateId(): Uuid {
@@ -30,6 +31,7 @@ export class UserUnlockedEvent implements DomainEvent {
       status: this.status,
       role: this.role,
       phone: this.phone,
+      lockedAt: this.lockedAt?.toISOString() ?? null,
     };
   }
 }

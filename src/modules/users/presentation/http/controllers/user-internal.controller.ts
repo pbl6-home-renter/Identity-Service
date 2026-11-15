@@ -1,4 +1,12 @@
-import { Controller, Get, HttpCode, HttpStatus, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Query,
+} from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { InternalOnly } from 'shared/presentation/decorators/auth/internal-only.decorator';
@@ -10,12 +18,31 @@ import { UserLookupInternalQuery } from '../../../application/queries/user-looku
 import { MediaUserAvatarLookupQuery } from 'modules/media/application/queries/media-user-avatar-lookup/media-user-avatar-lookup.query';
 import { UserAvatarUrlMap } from 'modules/media/application/queries/media-user-avatar-lookup/media-user-avatar-lookup.query.handler';
 import { User } from '../../../domain/entities/user';
+import { Uuid } from 'shared/domain/value-objects/uuid.vo';
+import { UserLockPeriodGetInternalRequestDto } from '../requests/user-lock-period-get-internal.request.dto';
+import { UserLockPeriodGetInternalResponseDto } from '../responses/user-lock-period-get-internal.response.dto';
+import { UserLockPeriodGetInternalResult } from '../../../application/queries/user-lock-period-get-internal/user-lock-period-get-internal.result';
+import { UserLockPeriodGetInternalQuery } from '../../../application/queries/user-lock-period-get-internal/user-lock-period-get-internal.query';
 
 @ApiExcludeController()
 @InternalOnly()
 @Controller('internal/users')
 export class UserInternalController {
   constructor(private readonly queryBus: QueryBus) {}
+
+  @Get(':userId/lock-period')
+  @HttpCode(HttpStatus.OK)
+  @ResponseCode(UserResponseCodeConstant.USER_LOCK_PERIOD_FETCHED)
+  async lockPeriod(
+    @Param('userId', ParseUUIDPipe) userId: Uuid,
+    @Query() request: UserLockPeriodGetInternalRequestDto,
+  ): Promise<UserLockPeriodGetInternalResponseDto> {
+    const result = await this.queryBus.execute<
+      UserLockPeriodGetInternalQuery,
+      UserLockPeriodGetInternalResult
+    >(UserLockPeriodGetInternalRequestDto.toQuery(request, userId));
+    return UserLockPeriodGetInternalResponseDto.fromResult(result);
+  }
 
   @Get()
   @HttpCode(HttpStatus.OK)

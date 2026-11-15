@@ -57,6 +57,8 @@ function createTokenService(): ITokenService {
 function createUserRepository(user: User | null): IUserRepository {
   return {
     save: jest.fn(async () => undefined),
+    recordLockPeriod: jest.fn(async () => undefined),
+    recordUnlockPeriod: jest.fn(async () => undefined),
     findById: jest.fn(async () => user),
     findByIdForUpdate: jest.fn(async () => user),
     delete: jest.fn(async () => undefined),

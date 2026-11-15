@@ -24,6 +24,8 @@ import { UserLookupInternalQueryHandler } from './application/queries/user-looku
 import { UserDirectoryListQueryHandler } from './application/queries/user-directory-list/user-directory-list.query.handler';
 import { UserInternalController } from './presentation/http/controllers/user-internal.controller';
 import { TenancyUserStatsService } from './infrastructure/services/tenancy-user-stats.service';
+import { UserLockPeriodTypeormEntity } from './infrastructure/persistence/user-lock-period.typeorm-entity';
+import { UserLockPeriodGetInternalQueryHandler } from './application/queries/user-lock-period-get-internal/user-lock-period-get-internal.query.handler';
 
 const commandHandlers = [
   UserUpdateMeCommandHandler,
@@ -35,6 +37,7 @@ const commandHandlers = [
 ];
 
 const queryHandlers = [
+  UserLockPeriodGetInternalQueryHandler,
   UserGetMeQueryHandler,
   UserListAdminQueryHandler,
   UserGetDetailAdminQueryHandler,
@@ -45,7 +48,7 @@ const queryHandlers = [
 @Module({
   imports: [
     CqrsModule,
-    TypeOrmModule.forFeature([UserEntity]),
+    TypeOrmModule.forFeature([UserEntity, UserLockPeriodTypeormEntity]),
     LandlordProfilesModule,
     OutboxModule,
   ],
@@ -57,6 +60,10 @@ const queryHandlers = [
     UserInternalController,
   ],
   providers: [
+    {
+      provide: USERS_DI_TOKEN.LOCK_PERIOD_QUERY,
+      useExisting: USERS_DI_TOKEN.REPOSITORY,
+    },
     {
       provide: USERS_DI_TOKEN.REPOSITORY,
       useClass: UserRepository,
