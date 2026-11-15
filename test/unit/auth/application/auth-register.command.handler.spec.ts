@@ -21,6 +21,8 @@ import { generateUuid } from 'shared/domain/value-objects/uuid.vo';
 function createUserRepository(existing: User | null): IUserRepository {
   return {
     save: jest.fn(async () => undefined),
+    recordLockPeriod: jest.fn(async () => undefined),
+    recordUnlockPeriod: jest.fn(async () => undefined),
     findById: jest.fn(async () => null),
     findByIdForUpdate: jest.fn(async () => null),
     delete: jest.fn(async () => undefined),

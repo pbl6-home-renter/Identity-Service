@@ -15,13 +15,61 @@ import { UserEntity } from './user.typeorm-entity';
 import { UserMapper } from './mappers/user.mapper';
 import { Email } from '../../domain/value-objects/email.vo';
 import { Phone } from '../../domain/value-objects/phone.vo';
+import {
+  UserLockPeriodQueryPort,
+  UserLockPeriodSnapshot,
+} from '../../application/ports/user-lock-period-query.port';
+import { UserLockPeriodTypeormEntity } from './user-lock-period.typeorm-entity';
 
 @Injectable()
-export class UserRepository implements IUserRepository {
+export class UserRepository
+  implements IUserRepository, UserLockPeriodQueryPort
+{
   constructor(
     @InjectRepository(UserEntity)
     private readonly repository: Repository<UserEntity>,
   ) {}
+
+  async recordLockPeriod(
+    userId: Uuid,
+    lockedAt: Date,
+    context: TransactionContext,
+  ): Promise<void> {
+    await withTransaction(this.repository, context)
+      .manager.getRepository(UserLockPeriodTypeormEntity)
+      .insert({ userId, lockedAt, unlockedAt: null });
+  }
+
+  async recordUnlockPeriod(
+    userId: Uuid,
+    lockedAt: Date,
+    unlockedAt: Date,
+    context: TransactionContext,
+  ): Promise<void> {
+    await withTransaction(this.repository, context)
+      .manager.getRepository(UserLockPeriodTypeormEntity)
+      .upsert({ userId, lockedAt, unlockedAt }, ['userId', 'lockedAt']);
+  }
+
+  findLockPeriod(
+    userId: Uuid,
+    lockedAt: Date,
+    context: TransactionContext,
+  ): Promise<UserLockPeriodSnapshot | null> {
+    return withTransaction(this.repository, context)
+      .manager.getRepository(UserLockPeriodTypeormEntity)
+      .findOneBy({ userId, lockedAt });
+  }
+
+  async findLatestLockTime(
+    userId: Uuid,
+    context: TransactionContext,
+  ): Promise<Date | null> {
+    const latest = await withTransaction(this.repository, context)
+      .manager.getRepository(UserLockPeriodTypeormEntity)
+      .findOne({ where: { userId }, order: { lockedAt: 'DESC' } });
+    return latest?.lockedAt ?? null;
+  }
 
   async save(user: User, context?: TransactionContext): Promise<void> {
     try {

@@ -43,6 +43,11 @@ export class UserLockCommandHandler implements ICommandHandler<
 
       user.lock(command.lockReason);
       await this.userRepository.save(user, context);
+      await this.userRepository.recordLockPeriod(
+        user.id,
+        user.lockedAt!,
+        context,
+      );
 
       await this.outboxRepository.append(
         user

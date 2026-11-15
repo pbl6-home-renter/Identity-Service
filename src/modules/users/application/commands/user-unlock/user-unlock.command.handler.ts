@@ -35,8 +35,18 @@ export class UserUnlockCommandHandler implements ICommandHandler<
         throw new UserNotFoundException();
       }
 
-      user.unlock();
+      const lockedAt = user.lockedAt;
+      const unlockedAt = new Date();
+      user.unlock(unlockedAt);
       await this.userRepository.save(user, context);
+      if (lockedAt) {
+        await this.userRepository.recordUnlockPeriod(
+          user.id,
+          lockedAt,
+          unlockedAt,
+          context,
+        );
+      }
 
       await this.outboxRepository.append(
         user

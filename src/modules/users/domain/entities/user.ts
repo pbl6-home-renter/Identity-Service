@@ -72,15 +72,23 @@ export class User extends AggregateRoot {
     );
   }
 
-  unlock(): void {
+  unlock(unlockedAt = new Date()): void {
     if (this._status !== UserStatus.LOCKED) {
       throw new UserUnlockNotLockedException();
     }
+    const lockedAt = this._lockedAt;
     this._status = UserStatus.ACTIVE;
     this._lockReason = null;
     this._lockedAt = null;
     this.addDomainEvent(
-      new UserUnlockedEvent(this.id, this._status, this.role, this.phone.value),
+      new UserUnlockedEvent(
+        this.id,
+        this._status,
+        this.role,
+        this.phone.value,
+        lockedAt,
+        unlockedAt,
+      ),
     );
     this.addDomainEvent(
       new UserAccountNotificationRequestedEvent(this.id, this._status, null),

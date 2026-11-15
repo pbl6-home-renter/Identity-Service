@@ -124,6 +124,7 @@ describe('User', () => {
     user.unlock();
     const [unlocked, notice] = user.pullDomainEvents();
     expect(unlocked.payload).toEqual({
+      lockedAt: null,
       userId: user.id,
       status: UserStatus.ACTIVE,
       role: UserRole.TENANT,

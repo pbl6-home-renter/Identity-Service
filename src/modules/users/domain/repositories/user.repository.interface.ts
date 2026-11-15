@@ -6,6 +6,17 @@ import { Email } from '../value-objects/email.vo';
 import { Phone } from '../value-objects/phone.vo';
 
 export interface IUserRepository extends BaseRepository<User> {
+  recordLockPeriod(
+    userId: Uuid,
+    lockedAt: Date,
+    context: TransactionContext,
+  ): Promise<void>;
+  recordUnlockPeriod(
+    userId: Uuid,
+    lockedAt: Date,
+    unlockedAt: Date,
+    context: TransactionContext,
+  ): Promise<void>;
   findByIdForUpdate(
     id: Uuid,
     context: TransactionContext,
