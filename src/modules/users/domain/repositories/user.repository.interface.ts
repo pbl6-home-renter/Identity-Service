@@ -6,6 +6,10 @@ import { Email } from '../value-objects/email.vo';
 import { Phone } from '../value-objects/phone.vo';
 
 export interface IUserRepository extends BaseRepository<User> {
+  findByIdForUpdate(
+    id: Uuid,
+    context: TransactionContext,
+  ): Promise<User | null>;
   updatePassword(
     userId: Uuid,
     newHashedPassword: string,
