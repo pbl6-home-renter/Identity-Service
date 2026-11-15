@@ -13,6 +13,7 @@ import { UserRegisteredEvent } from '../events/user-registered.event';
 import { UserUpdatedEvent } from '../events/user-updated.event';
 import { UserLockedEvent } from '../events/user-locked.event';
 import { UserUnlockedEvent } from '../events/user-unlocked.event';
+import { UserAccountNotificationRequestedEvent } from '../events/user-account-notification-requested.event';
 import { UserDeletedEvent } from '../events/user-deleted.event';
 import { UserLockPendingVerificationException } from '../exceptions/user-lock-pending-verification.exception';
 import { UserEmailVerifiedEvent } from '../events/user-email-verified.event';
@@ -62,6 +63,13 @@ export class User extends AggregateRoot {
     this.addDomainEvent(
       new UserLockedEvent(this.id, this.role, this._status, reason, lockedAt),
     );
+    this.addDomainEvent(
+      new UserAccountNotificationRequestedEvent(
+        this.id,
+        this._status,
+        lockedAt,
+      ),
+    );
   }
 
   unlock(): void {
@@ -71,7 +79,12 @@ export class User extends AggregateRoot {
     this._status = UserStatus.ACTIVE;
     this._lockReason = null;
     this._lockedAt = null;
-    this.addDomainEvent(new UserUnlockedEvent(this.id, this._status));
+    this.addDomainEvent(
+      new UserUnlockedEvent(this.id, this._status, this.role, this.phone.value),
+    );
+    this.addDomainEvent(
+      new UserAccountNotificationRequestedEvent(this.id, this._status, null),
+    );
   }
 
   verifyEmail(): void {

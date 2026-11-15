@@ -26,13 +26,16 @@ export class UserUnlockCommandHandler implements ICommandHandler<
   ) {}
 
   async execute(command: UserUnlockCommand): Promise<User> {
-    const user = await this.userRepository.findById(command.userId);
-    if (!user) {
-      throw new UserNotFoundException();
-    }
+    return this.unitOfWork.run(async (context) => {
+      const user = await this.userRepository.findByIdForUpdate(
+        command.userId,
+        context,
+      );
+      if (!user) {
+        throw new UserNotFoundException();
+      }
 
-    user.unlock();
-    await this.unitOfWork.run(async (context) => {
+      user.unlock();
       await this.userRepository.save(user, context);
 
       await this.outboxRepository.append(
@@ -41,8 +44,7 @@ export class UserUnlockCommandHandler implements ICommandHandler<
           .map((event) => OutboxMessage.fromDomainEvent(event)),
         context,
       );
+      return user;
     });
-
-    return user;
   }
 }

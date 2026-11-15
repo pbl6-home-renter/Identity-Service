@@ -100,11 +100,47 @@ describe('User', () => {
     expect(user.status).toBe(UserStatus.ACTIVE);
     expect(user.lockReason).toBeNull();
     expect(user.lockedAt).toBeNull();
-    expect(user.pullDomainEvents().map((event) => event.eventType)).toEqual([
+    const events = user.pullDomainEvents();
+    expect(events.map((event) => event.eventType)).toEqual([
       USER_EVENTS.EMAIL_VERIFIED,
       USER_EVENTS.LOCKED,
+      'notification.requested',
       USER_EVENTS.UNLOCKED,
+      'notification.requested',
     ]);
+    expect(events[2].payload).toEqual(
+      expect.objectContaining({
+        notification: expect.objectContaining({
+          type: 'system',
+          title: 'USER_ACCOUNT_LOCKED_TITLE',
+          body: 'USER_ACCOUNT_LOCKED_BODY',
+        }),
+      }),
+    );
+  });
+
+  it('keeps tenant lookup metadata on unlock and excludes it from the account notice', () => {
+    const user = createUser(UserStatus.LOCKED);
+    user.unlock();
+    const [unlocked, notice] = user.pullDomainEvents();
+    expect(unlocked.payload).toEqual({
+      userId: user.id,
+      status: UserStatus.ACTIVE,
+      role: UserRole.TENANT,
+      phone: '0912345678',
+    });
+    expect(notice.payload).toEqual(
+      expect.objectContaining({
+        sourceService: 'identity',
+        recipientUserIds: [user.id],
+        notification: expect.objectContaining({
+          type: 'system',
+          title: 'USER_ACCOUNT_UNLOCKED_TITLE',
+          body: 'USER_ACCOUNT_UNLOCKED_BODY',
+        }),
+      }),
+    );
+    expect(JSON.stringify(notice.payload)).not.toContain('0912345678');
   });
 
   it('rejects repeated or out-of-order lifecycle transitions', () => {

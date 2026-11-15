@@ -10,7 +10,9 @@ export class MediaDownloadUrlResponseDto {
   @ApiProperty()
   contentType: string;
 
-  static fromResult(result: MediaDownloadUrlResponseDto): MediaDownloadUrlResponseDto {
+  static fromResult(
+    result: MediaDownloadUrlResponseDto,
+  ): MediaDownloadUrlResponseDto {
     const dto = new MediaDownloadUrlResponseDto();
     dto.url = result.url;
     dto.fileName = result.fileName;
