@@ -2,6 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Media } from '../../../domain/entities/media';
 import { MediaUploadLimits } from '../../../domain/entities/media.props';
+import { MediaOwnerFileLimitExceededException } from '../../../domain/exceptions/media-owner-file-limit-exceeded.exception';
 import { IMediaRepository } from '../../../domain/repositories/media.repository.interface';
 import { MEDIA_DI_TOKEN } from '../../../media.di-token';
 import { IObjectStorage } from '../../ports/object-storage.port';
@@ -31,6 +32,20 @@ export class MediaPresignUploadCommandHandler implements ICommandHandler<
   }: MediaPresignUploadCommand): Promise<MediaUploadTicketResult> {
     const media = Media.requestUpload(request, this.limits);
     await this.access.assertCanUpload(actor, media);
+
+    const maxFiles = media.policy.maxFilesPerOwner;
+    if (maxFiles !== undefined) {
+      const currentFiles = await this.mediaRepository.findByOwner(
+        media.ownerType,
+        media.ownerId,
+      );
+      const liveFiles = currentFiles.filter(
+        (item) => item.purpose === media.purpose,
+      ).length;
+      if (liveFiles >= maxFiles) {
+        throw new MediaOwnerFileLimitExceededException(maxFiles);
+      }
+    }
 
     const expiresIn = this.limits.ticketTtlSeconds;
     const uploadUrl = await this.storage.createUploadUrl(media, expiresIn);

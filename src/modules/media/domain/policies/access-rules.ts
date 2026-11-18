@@ -24,6 +24,11 @@ export const isOwnerLandlord: AccessRule = ({ actor, owner }) =>
 export const isParticipant: AccessRule = ({ actor, owner }) =>
   owner.participantUserIds.includes(actor.id);
 
+export const ownerStatusIs =
+  (...statuses: string[]): AccessRule =>
+  ({ owner }) =>
+    owner.status !== null && statuses.includes(owner.status);
+
 export const capturedByCamera: AccessRule = ({ captureSource }) =>
   captureSource === MediaCaptureSource.CAMERA_DIRECT;
 

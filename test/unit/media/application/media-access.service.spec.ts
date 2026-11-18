@@ -84,6 +84,31 @@ describe('MediaAccessService', () => {
     expect(resolver.resolve).not.toHaveBeenCalled();
   });
 
+  it('rejects issue media after the issue is closed', async () => {
+    const actor: MediaActor = { id: generateUuid(), role: UserRole.TENANT };
+    const ownerId = generateUuid();
+    const resolver: IMediaOwnerResolver = {
+      resolve: jest.fn(async () => ({
+        ownerType: MediaOwnerType.ISSUE_REPORT,
+        ownerId,
+        landlordId: null,
+        participantUserIds: [actor.id],
+        status: 'resolved',
+      })),
+    };
+    const service = new MediaAccessService(resolver);
+    const photo = createMedia({
+      purpose: MediaPurpose.ISSUE_PHOTO,
+      ownerType: MediaOwnerType.ISSUE_REPORT,
+      ownerId,
+      uploaderId: actor.id,
+    });
+
+    await expect(service.assertCanUpload(actor, photo)).rejects.toThrow(
+      MediaForbiddenException,
+    );
+  });
+
   it('resolves the owner for upload authorization and skips lookup for ordinary completion', async () => {
     const actor: MediaActor = { id: generateUuid(), role: UserRole.TENANT };
     const owner: OwnerSnapshot = {

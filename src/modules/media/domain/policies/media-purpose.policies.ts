@@ -15,6 +15,7 @@ import {
   capturedByCamera,
   isOwnerLandlord,
   isParticipant,
+  ownerStatusIs,
   isSelf,
 } from './access-rules';
 
@@ -32,6 +33,8 @@ export interface MediaPurposePolicy {
   readonly allowDelete?: boolean;
   /** Only one live file per owner: completing a new one replaces the previous. */
   readonly singlePerOwner?: boolean;
+  /** Maximum number of live pending/uploaded files for one owner. */
+  readonly maxFilesPerOwner?: number;
   /** Owner statuses in which the file is evidence and can no longer be deleted. */
   readonly lockedOwnerStatuses?: readonly string[];
 }
@@ -122,11 +125,19 @@ export const MEDIA_PURPOSE_POLICIES: Readonly<
   [MediaPurpose.ISSUE_PHOTO]: {
     ownerTypes: [MediaOwnerType.ISSUE_REPORT],
     visibility: MediaVisibility.PRIVATE,
-    contentTypes: IMAGE_CONTENT_TYPES,
-    canUpload: anyOf(isParticipant, isOwnerLandlord),
+    contentTypes: [
+      ...IMAGE_CONTENT_TYPES,
+      MediaContentType.MP4,
+      MediaContentType.WEBM,
+    ],
+    canUpload: allOf(
+      ownerStatusIs('open', 'in_progress'),
+      anyOf(isParticipant, isOwnerLandlord),
+    ),
     canRead: anyOf(isParticipant, isOwnerLandlord),
     ownerAuthorizationRequired: true,
     allowDelete: false,
+    maxFilesPerOwner: 5,
   },
 
   [MediaPurpose.CHAT_ATTACHMENT]: {

@@ -4,6 +4,7 @@ import { UNIT_OF_WORK_DI_TOKEN } from 'shared/application/di-tokens';
 import { IUnitOfWork } from 'shared/application/ports/unit-of-work.port';
 import { Media } from '../../../domain/entities/media';
 import { MediaNotFoundException } from '../../../domain/exceptions/media-not-found.exception';
+import { MediaOwnerFileLimitExceededException } from '../../../domain/exceptions/media-owner-file-limit-exceeded.exception';
 import { MediaTypeNotAllowedException } from '../../../domain/exceptions/media-type-not-allowed.exception';
 import { MediaUploadNotCompletedException } from '../../../domain/exceptions/media-upload-not-completed.exception';
 import { IMediaRepository } from '../../../domain/repositories/media.repository.interface';
@@ -66,6 +67,19 @@ export class MediaCompleteUploadCommandHandler implements ICommandHandler<
 
   /** For single-file purposes (avatar, cover photo) the previous file is replaced. */
   private async markUploaded(media: Media): Promise<void> {
+    const maxFiles = media.policy.maxFilesPerOwner;
+    if (maxFiles !== undefined) {
+      const currentFiles = await this.mediaRepository.findByOwner(
+        media.ownerType,
+        media.ownerId,
+      );
+      const liveFiles = currentFiles.filter(
+        (item) => item.purpose === media.purpose,
+      ).length;
+      if (liveFiles > maxFiles) {
+        throw new MediaOwnerFileLimitExceededException(maxFiles);
+      }
+    }
     const replaced = media.policy.singlePerOwner
       ? await this.mediaRepository.findUploadedByOwner(
           media.ownerType,
