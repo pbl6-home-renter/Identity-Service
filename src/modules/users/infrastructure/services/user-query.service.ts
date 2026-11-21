@@ -11,6 +11,7 @@ import { UserRole } from 'shared/domain/enums/user-role.enum';
 import { UserStatus } from 'shared/domain/enums/user-status.enum';
 import {
   IUserQueryService,
+  UserCountByRoleAndStatus,
   UserDirectorySearch,
 } from '../../application/ports/user-query-service.port';
 import { UserDirectoryEntryModel } from '../../application/queries/models/user-directory-entry.model';
@@ -29,6 +30,23 @@ export class UserQueryService implements IUserQueryService {
     @InjectRepository(UserEntity)
     private readonly repository: Repository<UserEntity>,
   ) {}
+
+  async countUsersByRoleAndStatus(): Promise<UserCountByRoleAndStatus[]> {
+    const rows = await this.repository
+      .createQueryBuilder('user')
+      .select('user.role', 'role')
+      .addSelect('user.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('user.role')
+      .addGroupBy('user.status')
+      .getRawMany<{ role: UserRole; status: UserStatus; count: string }>();
+
+    return rows.map((row) => ({
+      role: row.role,
+      status: row.status,
+      count: Number(row.count),
+    }));
+  }
 
   async findByUserId(id: Uuid): Promise<GetMeUserModel | null> {
     const raw = await this.repository

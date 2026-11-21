@@ -4,6 +4,7 @@ export class UserResponseCodeConstant {
   static readonly CURRENT_USER_PROFILE_UPDATED = 'CURRENT_USER_PROFILE_UPDATED';
 
   static readonly USER_LIST_FETCHED = 'USER_LIST_FETCHED';
+  static readonly USER_STATS_FETCHED = 'USER_STATS_FETCHED';
   static readonly USER_DETAIL_FETCHED = 'USER_DETAIL_FETCHED';
   static readonly USER_UPDATED = 'USER_UPDATED';
   static readonly USER_ACCOUNT_LOCKED = 'USER_ACCOUNT_LOCKED';

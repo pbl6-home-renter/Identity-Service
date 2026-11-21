@@ -32,11 +32,14 @@ import { UserListAdminQueryRequestDto } from '../requests/user-list-admin.query.
 import { UserUpdateAdminRequestDto } from '../requests/user-update-admin.request.dto';
 import { UserLockRequestDto } from '../requests/user-lock.request.dto';
 import { UserListAdminResponseDto } from '../responses/user-list-admin.response.dto';
+import { UserStatsResponseDto } from '../responses/user-stats.response.dto';
 import { UserGetDetailAdminResponseDto } from '../responses/user-get-detail-admin.response.dto';
 import { UserUpdateAdminResponseDto } from '../responses/user-update-admin.response.dto';
 import { UserLockResponseDto } from '../responses/user-lock.response.dto';
 import { UserUnlockResponseDto } from '../responses/user-unlock.response.dto';
 import { UserListAdminQuery } from '../../../application/queries/user-list-admin/user-list-admin.query';
+import { UserStatsQuery } from '../../../application/queries/user-stats/user-stats.query';
+import { UserStatsResult } from '../../../application/results/user-stats.result';
 import { UserGetDetailAdminQuery } from '../../../application/queries/user-get-detail-admin/user-get-detail-admin.query';
 import { UserUpdateAdminCommand } from '../../../application/commands/user-update-admin/user-update-admin.command';
 import { UserLockCommand } from '../../../application/commands/user-lock/user-lock.command';
@@ -86,6 +89,27 @@ export class UserAdminController {
       ),
       pagination: result.pagination,
     });
+  }
+
+  @Get('stats')
+  @HttpCode(HttpStatus.OK)
+  @ResponseCode(UserResponseCodeConstant.USER_STATS_FETCHED)
+  @ApiOperation({
+    operationId: 'getUserStatsAdmin',
+    summary: 'Get user account statistics',
+  })
+  @ApiResponse({ status: 401, description: 'UNAUTHORIZED' })
+  @ApiResponse({ status: 403, description: 'FORBIDDEN' })
+  @ApiSuccessResponse({
+    status: 200,
+    code: UserResponseCodeConstant.USER_STATS_FETCHED,
+    dataDto: UserStatsResponseDto,
+  })
+  async getUserStats(): Promise<UserStatsResponseDto> {
+    const result: UserStatsResult = await this.queryBus.execute(
+      new UserStatsQuery(),
+    );
+    return UserStatsResponseDto.fromResult(result);
   }
 
   @Get(':userId')
