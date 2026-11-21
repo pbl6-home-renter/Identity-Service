@@ -15,6 +15,7 @@ import { UserGetMeQueryHandler } from './application/queries/user-get-me/user-ge
 import { UserUpdateMeCommandHandler } from './application/commands/user-update-me/user-update-me.command.handler';
 import { UserChangePasswordCommandHandler } from './application/commands/user-change-password/user-change-password.command.handler';
 import { UserListAdminQueryHandler } from './application/queries/user-list-admin/user-list-admin.query.handler';
+import { UserStatsQueryHandler } from './application/queries/user-stats/user-stats.query.handler';
 import { UserGetDetailAdminQueryHandler } from './application/queries/user-get-detail-admin/user-get-detail-admin.query.handler';
 import { UserUpdateAdminCommandHandler } from './application/commands/user-update-admin/user-update-admin.command.handler';
 import { UserLockCommandHandler } from './application/commands/user-lock/user-lock.command.handler';
@@ -40,6 +41,7 @@ const queryHandlers = [
   UserLockPeriodGetInternalQueryHandler,
   UserGetMeQueryHandler,
   UserListAdminQueryHandler,
+  UserStatsQueryHandler,
   UserGetDetailAdminQueryHandler,
   UserLookupInternalQueryHandler,
   UserDirectoryListQueryHandler,
