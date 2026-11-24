@@ -34,6 +34,7 @@ export class UserAccountNotificationRequestedEvent implements DomainEvent {
           ? UserNotificationCodeConstant.USER_ACCOUNT_LOCKED_BODY
           : UserNotificationCodeConstant.USER_ACCOUNT_UNLOCKED_BODY,
         data: {
+          messageKey: locked ? USER_EVENTS.LOCKED : USER_EVENTS.UNLOCKED,
           userId: this.aggregateId,
           status: this.status,
           eventType: locked ? USER_EVENTS.LOCKED : USER_EVENTS.UNLOCKED,
