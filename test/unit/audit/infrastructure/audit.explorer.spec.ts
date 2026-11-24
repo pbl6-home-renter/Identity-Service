@@ -114,6 +114,7 @@ describe('AuditExplorer', () => {
       entityType: 'user',
       entityId: 'user-id',
       actorId: 'admin-id',
+      occurredAt: expect.any(Date),
       metadata: { lockReason: 'Policy violation', label: 'handled:suffix' },
     });
     expect(recorder.record.mock.calls[0]).toHaveLength(1);
@@ -160,7 +161,7 @@ describe('AuditExplorer', () => {
     expect(loggerError).toHaveBeenCalledTimes(1);
     expect(loggerError).toHaveBeenCalledWith(
       expect.stringContaining('action=user.locked entityId=user-id'),
-      error.stack,
+      error.name,
     );
   });
 
@@ -176,4 +177,50 @@ describe('AuditExplorer', () => {
 
     await expect(handler.execute(command, 'suffix')).rejects.toBe(error);
   });
+
+  it.each(['actorId', 'entityId', 'metadata', 'skipIf'] as const)(
+    'keeps the committed result when %s resolver throws, without logging sensitive values',
+    async (resolver) => {
+      const secret = 'private-phone-0901234567';
+      const error = new Error(secret);
+      const handler = createHandler({
+        [resolver]: () => {
+          throw error;
+        },
+      });
+      const recorder = {
+        record: jest.fn<Promise<void>, Parameters<AuditRecorder['record']>>(),
+      };
+      const loggerError = jest.spyOn(Logger.prototype, 'error');
+      explore(handler, recorder);
+
+      await expect(handler.execute(command, 'suffix')).resolves.toEqual(result);
+      expect(recorder.record).not.toHaveBeenCalled();
+      expect(loggerError).toHaveBeenCalledTimes(1);
+      expect(loggerError.mock.calls[0][0]).toContain('action=user.locked');
+      expect(loggerError.mock.calls[0][0]).toContain(
+        `entityId=${resolver === 'entityId' ? 'null' : 'user-id'}`,
+      );
+      expect(JSON.stringify(loggerError.mock.calls)).not.toContain(secret);
+    },
+  );
+
+  it.each(['actorId', 'entityId', 'metadata', 'skipIf'] as const)(
+    'propagates %s resolver failure when onError is throw',
+    async (resolver) => {
+      const error = new Error('Resolver failed');
+      const handler = createHandler({
+        onError: 'throw',
+        [resolver]: () => {
+          throw error;
+        },
+      });
+      const recorder = {
+        record: jest.fn<Promise<void>, Parameters<AuditRecorder['record']>>(),
+      };
+      explore(handler, recorder);
+      await expect(handler.execute(command, 'suffix')).rejects.toBe(error);
+      expect(recorder.record).not.toHaveBeenCalled();
+    },
+  );
 });

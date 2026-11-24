@@ -84,22 +84,26 @@ export class AuditExplorer implements OnModuleInit {
       ...args: unknown[]
     ): Promise<unknown> {
       const result = await method.apply(this, args);
+      const occurredAt = new Date();
       const command = args[0];
-      if (options.skipIf?.(command, result)) {
-        return result;
-      }
-
-      const entry: AuditEntry = {
-        action: options.action,
-        entityType: options.entityType,
-        entityId: options.entityId(command, result),
-        actorId: options.actorId(command, result),
-        ...(options.metadata && {
-          metadata: options.metadata(command, result),
-        }),
-      };
+      let entityId: string | null = null;
 
       try {
+        entityId = options.entityId(command, result);
+        if (options.skipIf?.(command, result)) {
+          return result;
+        }
+
+        const entry: AuditEntry = {
+          action: options.action,
+          entityType: options.entityType,
+          entityId,
+          actorId: options.actorId(command, result),
+          occurredAt,
+          ...(options.metadata && {
+            metadata: options.metadata(command, result),
+          }),
+        };
         // P11-D92: the handler has finished its transaction; audit uses its own.
         await recorder.record(entry);
       } catch (error) {
@@ -108,8 +112,8 @@ export class AuditExplorer implements OnModuleInit {
         }
 
         logger.error(
-          `Audit recording failed: action=${entry.action} entityId=${entry.entityId}`,
-          error instanceof Error ? error.stack : String(error),
+          `Audit recording failed: action=${options.action} entityId=${entityId}`,
+          error instanceof Error ? error.name : 'UnknownError',
         );
       }
 

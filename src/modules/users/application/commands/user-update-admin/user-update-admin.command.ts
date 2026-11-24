@@ -9,15 +9,22 @@ export interface UserUpdateAdminInput {
 
 export class UserUpdateAdminCommand implements ICommand {
   constructor(
+    readonly adminId: Uuid,
     readonly userId: Uuid,
     readonly name?: string,
     readonly phone?: string,
   ) {}
 
   static create(
+    adminId: Uuid,
     userId: Uuid,
     request: UserUpdateAdminInput,
   ): UserUpdateAdminCommand {
-    return new UserUpdateAdminCommand(userId, request.name, request.phone);
+    return new UserUpdateAdminCommand(
+      adminId,
+      userId,
+      request.name,
+      request.phone,
+    );
   }
 }

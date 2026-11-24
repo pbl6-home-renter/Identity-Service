@@ -15,6 +15,8 @@ import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 ])
 @Index('IDX_audit_logs_actor_occurred', ['actorId', 'occurredAt'])
 @Index('UQ_audit_logs_source_event_id', ['sourceEventId'], { unique: true })
+@Index('IDX_audit_logs_created', ['createdAt'])
+@Index('IDX_audit_logs_action_created', ['action', 'createdAt'])
 export class AuditLogTypeormEntity {
   // Audit records are append-only; they have no update or soft-delete fields.
   @PrimaryGeneratedColumn('uuid')
@@ -32,8 +34,11 @@ export class AuditLogTypeormEntity {
   @Column({ type: 'uuid', nullable: true })
   actorId: Uuid | null;
 
-  @Column({ type: 'jsonb', nullable: true })
-  metadata: Record<string, unknown> | null;
+  @Column({ type: 'jsonb', default: () => "'{}'::jsonb" })
+  metadata: Record<string, unknown>;
+
+  @Column({ type: 'varchar', length: 30, default: 'identity' })
+  sourceService: 'identity' | 'tenancy';
 
   @Column({ type: 'timestamptz', default: () => 'now()' })
   occurredAt: Date;

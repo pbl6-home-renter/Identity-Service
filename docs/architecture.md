@@ -183,3 +183,65 @@ grep -rnE "from '[^']*application" src/shared/domain src/modules/*/domain
 Repository của aggregate chỉ kế thừa `BaseRepository` khi thật sự hỗ trợ đủ `save`,
 `findById`, `delete`; không viết method `throw new Error('Method not implemented.')`.
 Ví dụ `IAuthRepository` (refresh token chỉ revoke, không xoá) tự khai báo method riêng.
+
+## 8. Audit thao tác quản trị user (P11-04)
+
+Identity dùng module `src/modules/audit`, được `SharedModule` import. Module bind
+`AUDIT_RECORDER_DI_TOKEN` sang `TypeOrmAuditRecorder`; decorator và explorer chỉ
+phụ thuộc port, không biết cách lưu DB. Tiếp tục dùng module và adapter hiện có
+từ P11-10, không tạo thêm module `audit-log` hoặc sửa Unit of Work.
+
+`@Audited` đặt trên `execute()` của bốn handler:
+
+| Handler | Action | Metadata |
+|---|---|---|
+| `user-lock` | `user.locked` | `{ lockReason }` |
+| `user-unlock` | `user.unlocked` | `{}` |
+| `user-update-admin` | `user.updated` | `{ changedFields }` |
+| `user-delete` | `user.deleted` | `{}` |
+
+Actor là `command.adminId`, lấy từ `@CurrentUser()` trong controller; entity là
+`command.userId`. Không nhận actor từ request body. Handler không gọi recorder
+thủ công. Sau khi transaction nghiệp vụ commit, explorer tính các resolver và
+await recorder trong một transaction riêng. Lỗi nghiệp vụ giữ nguyên và không
+ghi audit. `skipIf` hoặc resolver/recorder lỗi đều thuộc bước audit:
+`onError: 'log'` (mặc định) log action/entityId và loại lỗi, vẫn trả kết quả;
+`onError: 'throw'` ném lỗi audit. Không log command, user, metadata hoặc thông báo
+lỗi có thể chứa dữ liệu nhạy cảm.
+
+API `PATCH /users/{userId}` vẫn chỉ hỗ trợ `name` và `phone`. Handler trả nội bộ
+`UserUpdateAdminResult = { user, changedFields }`; controller chỉ dùng `user` để
+giữ nguyên HTTP response. So sánh tên sau trim và phone bằng `Phone.equals()`
+sau `Phone.create()`; `+84...` và `0...` tương đương không tính là thay đổi.
+`changedFields` chỉ chứa `name`, `phone`, theo thứ tự đó; không đổi giá trị thì
+`skipIf` bỏ ghi audit. Payload rỗng vẫn trả lỗi nghiệp vụ hiện có.
+
+Adapter kiểm tra action, source service và metadata trước khi mở transaction
+hoặc ghi SQL. Key ngoài allowlist bị loại:
+
+- `user.locked`: bắt buộc `lockReason` là string.
+- `user.unlocked`, `user.deleted`: metadata luôn `{}`.
+- `user.updated`: bắt buộc `changedFields` là mảng chỉ gồm `name`/`phone`; bỏ
+  trùng và chuẩn hóa thứ tự. Chỉ lưu tên field, không lưu số điện thoại hoặc giá
+  trị cũ/mới.
+- `building.approved`, `building.rejected`: chỉ `note` là string hoặc null;
+  thiếu note thì dùng null. Chưa triển khai consumer building trong task này.
+
+`AuditEntry.sourceService` tùy chọn, chỉ nhận `identity`/`tenancy`, mặc định
+`identity` khi bỏ qua field; giá trị khác, kể cả null, bị từ chối trước SQL.
+Explorer lấy `occurredAt` ngay sau khi handler hoàn tất, trước khi
+mở transaction audit. `occurredAt` là thời điểm thao tác/sự kiện, được giữ nguyên
+khi caller truyền vào và mặc định thời điểm ghi nếu thiếu; `createdAt` là thời
+điểm lưu DB.
+Caller từ event cần truyền `occurredAt` của event và `sourceEventId`.
+
+Có transaction context thì adapter dùng chính context đó. Không có thì mở
+transaction riêng. Khi có `sourceEventId`, câu INSERT chỉ bỏ qua conflict trên
+`source_event_id`, giữ nguyên bản ghi đầu tiên; các lỗi DB khác vẫn được ném ra.
+
+Migration `1795440754831-UpgradeAuditLogsForUserActions.ts` nâng cấp bảng đã có:
+thêm `source_service varchar(30) NOT NULL DEFAULT 'identity'`, backfill metadata
+NULL thành `{}` rồi đặt `metadata NOT NULL DEFAULT '{}'::jsonb`, thêm index
+`created_at` và `(action, created_at)`. Giữ `source_event_id` dạng text nullable,
+unique; giữ index actor/entity, hai timestamp và không thêm FK tới users. Revert
+khôi phục schema cũ, không đổi các `{}` đã backfill trở lại NULL.

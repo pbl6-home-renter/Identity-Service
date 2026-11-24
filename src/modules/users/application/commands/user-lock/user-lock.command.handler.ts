@@ -5,6 +5,7 @@ import { IUnitOfWork } from 'shared/application/ports/unit-of-work.port';
 import { OUTBOX_DI_TOKEN } from 'modules/outbox/outbox.di-token';
 import { OutboxRepository } from 'modules/outbox/domain/repositories/outbox.repository';
 import { OutboxMessage } from 'modules/outbox/domain/entities/outbox-message.entity';
+import { Audited } from 'modules/audit/application/audited.decorator';
 import { IUserRepository } from '../../../domain/repositories/user.repository.interface';
 import { User } from '../../../domain/entities/user';
 import { UserLockCannotSelfException } from '../../../domain/exceptions/user-lock-cannot-self.exception';
@@ -27,6 +28,13 @@ export class UserLockCommandHandler implements ICommandHandler<
     private readonly outboxRepository: OutboxRepository,
   ) {}
 
+  @Audited<UserLockCommand, User>({
+    action: 'user.locked',
+    entityType: 'user',
+    actorId: (command) => command.adminId,
+    entityId: (command) => command.userId,
+    metadata: (command) => ({ lockReason: command.lockReason }),
+  })
   async execute(command: UserLockCommand): Promise<User> {
     if (command.adminId === command.userId) {
       throw new UserLockCannotSelfException();

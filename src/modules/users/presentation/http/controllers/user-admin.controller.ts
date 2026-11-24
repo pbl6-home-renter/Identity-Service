@@ -49,6 +49,7 @@ import { MediaUserAvatarLookupQuery } from 'modules/media/application/queries/me
 import { UserAvatarUrlMap } from 'modules/media/application/queries/media-user-avatar-lookup/media-user-avatar-lookup.query.handler';
 import { User } from '../../../domain/entities/user';
 import { UserDetailResult } from '../../../application/results/user-detail.result';
+import { UserUpdateAdminResult } from '../../../application/results/user-update-admin.result';
 
 @ApiTags('User')
 @ApiBearerAuth()
@@ -164,14 +165,15 @@ export class UserAdminController {
     dataDto: UserUpdateAdminResponseDto,
   })
   async updateUser(
+    @CurrentUser() admin: AuthenticatedUser,
     @Param('userId', ParseUUIDPipe) userId: Uuid,
     @Body() body: UserUpdateAdminRequestDto,
   ): Promise<UserUpdateAdminResponseDto> {
-    return UserUpdateAdminResponseDto.fromDomain(
-      await this.commandBus.execute(
-        UserUpdateAdminCommand.create(userId, body),
-      ),
-    );
+    const result = await this.commandBus.execute<
+      UserUpdateAdminCommand,
+      UserUpdateAdminResult
+    >(UserUpdateAdminCommand.create(admin.id, userId, body));
+    return UserUpdateAdminResponseDto.fromDomain(result.user);
   }
 
   @Post(':userId/lock')
@@ -223,10 +225,11 @@ export class UserAdminController {
     dataDto: UserUnlockResponseDto,
   })
   async unlockUser(
+    @CurrentUser() admin: AuthenticatedUser,
     @Param('userId', ParseUUIDPipe) userId: Uuid,
   ): Promise<UserUnlockResponseDto> {
     return UserUnlockResponseDto.fromDomain(
-      await this.commandBus.execute(UserUnlockCommand.create(userId)),
+      await this.commandBus.execute(UserUnlockCommand.create(admin.id, userId)),
     );
   }
 
