@@ -1,1 +1,4 @@
 export const AUDIT_RECORDER_DI_TOKEN = Symbol('AUDIT_RECORDER');
+export const AUDIT_LOG_QUERY_SERVICE_DI_TOKEN = Symbol(
+  'AUDIT_LOG_QUERY_SERVICE',
+);
