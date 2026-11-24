@@ -329,7 +329,7 @@ Tài liệu tham khảo:
 
 ## Sự kiện phát hành (outbox)
 
-Các sự kiện được ghi vào bảng outbox trong cùng transaction với thay đổi nghiệp vụ, sau đó relay publish lên exchange `pbl6.events` (delivery at-least-once). Identity hiện **không** consume sự kiện nào từ RabbitMQ.
+Các sự kiện được ghi vào bảng outbox trong cùng transaction với thay đổi nghiệp vụ, sau đó relay publish lên exchange `pbl6.events` (delivery at-least-once). Identity consume `building.approved` và `building.rejected` từ Tenancy qua queue `identity.audit.building-review` để ghi audit; queue có `.retry` và `.dlq` theo cơ chế consumer chung.
 
 | Routing key | Phát sinh khi |
 |---|---|
