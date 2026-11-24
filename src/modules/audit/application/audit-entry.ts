@@ -4,6 +4,7 @@ export interface AuditEntry {
   entityId: string | null;
   actorId: string | null;
   metadata?: Record<string, unknown>;
+  sourceService?: 'identity' | 'tenancy';
   occurredAt?: Date;
   sourceEventId?: string;
 }

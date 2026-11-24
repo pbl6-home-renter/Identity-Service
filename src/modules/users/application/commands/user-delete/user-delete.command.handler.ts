@@ -11,6 +11,7 @@ import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import { OUTBOX_DI_TOKEN } from 'modules/outbox/outbox.di-token';
 import { OutboxRepository } from 'modules/outbox/domain/repositories/outbox.repository';
 import { OutboxMessage } from 'modules/outbox/domain/entities/outbox-message.entity';
+import { Audited } from 'modules/audit/application/audited.decorator';
 import { LANDLORD_PROFILES_DI_TOKEN } from 'modules/landlord-profiles/landlord-profiles.di-token';
 import { ILandlordProfileRepository } from 'modules/landlord-profiles/domain/repositories/landlord-profile.repository.interface';
 import { IUserRepository } from '../../../domain/repositories/user.repository.interface';
@@ -40,6 +41,13 @@ export class UserDeleteCommandHandler implements ICommandHandler<
     private readonly eventBus: EventBus,
   ) {}
 
+  @Audited<UserDeleteCommand, void>({
+    action: 'user.deleted',
+    entityType: 'user',
+    actorId: (command) => command.adminId,
+    entityId: (command) => command.userId,
+    metadata: () => ({}),
+  })
   async execute(command: UserDeleteCommand): Promise<void> {
     if (command.adminId === command.userId) {
       throw new UserDeleteCannotSelfException();

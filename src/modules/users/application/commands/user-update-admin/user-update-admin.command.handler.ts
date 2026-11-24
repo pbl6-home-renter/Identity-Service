@@ -5,6 +5,7 @@ import { IUnitOfWork } from 'shared/application/ports/unit-of-work.port';
 import { OUTBOX_DI_TOKEN } from 'modules/outbox/outbox.di-token';
 import { OutboxRepository } from 'modules/outbox/domain/repositories/outbox.repository';
 import { OutboxMessage } from 'modules/outbox/domain/entities/outbox-message.entity';
+import { Audited } from 'modules/audit/application/audited.decorator';
 import { PhoneAlreadyExistsException } from '../../../domain/exceptions/phone-already-exists.exception';
 import { IUserRepository } from '../../../domain/repositories/user.repository.interface';
 import { User } from '../../../domain/entities/user';
@@ -13,11 +14,12 @@ import { UserUpdatePayloadRequiredException } from '../../../domain/exceptions/u
 import { USERS_DI_TOKEN } from '../../../users.di-token';
 import { UserUpdateAdminCommand } from './user-update-admin.command';
 import { Phone } from '../../../domain/value-objects/phone.vo';
+import { UserUpdateAdminResult } from '../../results/user-update-admin.result';
 
 @CommandHandler(UserUpdateAdminCommand)
 export class UserUpdateAdminCommandHandler implements ICommandHandler<
   UserUpdateAdminCommand,
-  User
+  UserUpdateAdminResult
 > {
   constructor(
     @Inject(USERS_DI_TOKEN.REPOSITORY)
@@ -28,7 +30,17 @@ export class UserUpdateAdminCommandHandler implements ICommandHandler<
     private readonly outboxRepository: OutboxRepository,
   ) {}
 
-  async execute(command: UserUpdateAdminCommand): Promise<User> {
+  @Audited<UserUpdateAdminCommand, UserUpdateAdminResult>({
+    action: 'user.updated',
+    entityType: 'user',
+    actorId: (command) => command.adminId,
+    entityId: (command) => command.userId,
+    metadata: (_command, result) => ({ changedFields: result.changedFields }),
+    skipIf: (_command, result) => result.changedFields.length === 0,
+  })
+  async execute(
+    command: UserUpdateAdminCommand,
+  ): Promise<UserUpdateAdminResult> {
     this.validatePayload(command);
     const phone = command.phone ? Phone.create(command.phone) : undefined;
     const user = await this.findAndValidateUser(command, phone);
@@ -65,11 +77,19 @@ export class UserUpdateAdminCommandHandler implements ICommandHandler<
     user: User,
     command: UserUpdateAdminCommand,
     phone: Phone | undefined,
-  ): Promise<User> {
+  ): Promise<UserUpdateAdminResult> {
     const updated = user.updateProfile({
-      name: command.name,
+      name: command.name?.trim(),
       phone,
     });
+
+    const changedFields: ('name' | 'phone')[] = [];
+    if (updated.name !== user.name) {
+      changedFields.push('name');
+    }
+    if (!updated.phone.equals(user.phone)) {
+      changedFields.push('phone');
+    }
 
     await this.unitOfWork.run(async (context) => {
       await this.userRepository.save(updated, context);
@@ -82,6 +102,6 @@ export class UserUpdateAdminCommandHandler implements ICommandHandler<
       );
     });
 
-    return updated;
+    return { user: updated, changedFields };
   }
 }
