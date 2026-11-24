@@ -110,10 +110,17 @@ describe('User', () => {
     ]);
     expect(events[2].payload).toEqual(
       expect.objectContaining({
+        recipientUserIds: [user.id],
         notification: expect.objectContaining({
           type: 'system',
           title: 'USER_ACCOUNT_LOCKED_TITLE',
           body: 'USER_ACCOUNT_LOCKED_BODY',
+          data: expect.objectContaining({
+            messageKey: USER_EVENTS.LOCKED,
+            userId: user.id,
+            status: UserStatus.LOCKED,
+            lockedAt: expect.any(String),
+          }),
         }),
       }),
     );
@@ -138,6 +145,12 @@ describe('User', () => {
           type: 'system',
           title: 'USER_ACCOUNT_UNLOCKED_TITLE',
           body: 'USER_ACCOUNT_UNLOCKED_BODY',
+          data: expect.objectContaining({
+            messageKey: USER_EVENTS.UNLOCKED,
+            userId: user.id,
+            status: UserStatus.ACTIVE,
+            lockedAt: null,
+          }),
         }),
       }),
     );
