@@ -35,7 +35,6 @@ import { UserUpdateMeResponseDto } from '../responses/user-update-me.response.dt
 @ApiBearerAuth()
 @Controller()
 @Roles(UserRole.LANDLORD, UserRole.TENANT, UserRole.ADMIN)
-@AllowLocked()
 export class UserController {
   constructor(
     private readonly queryBus: QueryBus,
@@ -43,6 +42,7 @@ export class UserController {
   ) {}
 
   @Get('me')
+  @AllowLocked()
   @HttpCode(HttpStatus.OK)
   @ResponseCode(UserResponseCodeConstant.CURRENT_USER_PROFILE_FETCHED)
   @ApiOperation({ operationId: 'getCurrentUser', summary: 'Get current user' })
