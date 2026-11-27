@@ -23,12 +23,25 @@ import { UserLockPeriodGetInternalRequestDto } from '../requests/user-lock-perio
 import { UserLockPeriodGetInternalResponseDto } from '../responses/user-lock-period-get-internal.response.dto';
 import { UserLockPeriodGetInternalResult } from '../../../application/queries/user-lock-period-get-internal/user-lock-period-get-internal.result';
 import { UserLockPeriodGetInternalQuery } from '../../../application/queries/user-lock-period-get-internal/user-lock-period-get-internal.query';
+import { UserActiveAdminIdsInternalQuery } from '../../../application/queries/user-active-admin-ids-internal/user-active-admin-ids-internal.query';
+import { UserActiveAdminIdsInternalResponseDto } from '../responses/user-active-admin-ids-internal.response.dto';
 
 @ApiExcludeController()
 @InternalOnly()
 @Controller('internal/users')
 export class UserInternalController {
   constructor(private readonly queryBus: QueryBus) {}
+
+  @Get('admins/active-ids')
+  @HttpCode(HttpStatus.OK)
+  @ResponseCode(UserResponseCodeConstant.USER_ACTIVE_ADMIN_IDS_FETCHED)
+  async activeAdminIds(): Promise<UserActiveAdminIdsInternalResponseDto> {
+    const ids = await this.queryBus.execute<
+      UserActiveAdminIdsInternalQuery,
+      Uuid[]
+    >(new UserActiveAdminIdsInternalQuery());
+    return UserActiveAdminIdsInternalResponseDto.fromIds(ids);
+  }
 
   @Get(':userId/lock-period')
   @HttpCode(HttpStatus.OK)

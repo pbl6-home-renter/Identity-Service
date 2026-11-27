@@ -22,6 +22,8 @@ export interface UserDirectorySearch {
 }
 
 export interface IUserQueryService {
+  findActiveAdminIds(): Promise<Uuid[]>;
+
   /** Counts all user rows, including soft-deleted accounts. */
   countUsersByRoleAndStatus(): Promise<UserCountByRoleAndStatus[]>;
 

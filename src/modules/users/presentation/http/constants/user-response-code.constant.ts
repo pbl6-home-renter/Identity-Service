@@ -11,5 +11,7 @@ export class UserResponseCodeConstant {
   static readonly USER_ACCOUNT_UNLOCKED = 'USER_ACCOUNT_UNLOCKED';
 
   static readonly USER_LOOKUP_FETCHED = 'USER_LOOKUP_FETCHED';
+  static readonly USER_ACTIVE_ADMIN_IDS_FETCHED =
+    'USER_ACTIVE_ADMIN_IDS_FETCHED';
   static readonly USER_DIRECTORY_FETCHED = 'USER_DIRECTORY_FETCHED';
 }
