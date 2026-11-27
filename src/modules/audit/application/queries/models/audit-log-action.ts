@@ -3,6 +3,7 @@ export const AUDIT_LOG_ACTIONS = [
   'user.unlocked',
   'user.updated',
   'user.deleted',
+  'appeal.rejected',
   'building.approved',
   'building.rejected',
 ] as const;
