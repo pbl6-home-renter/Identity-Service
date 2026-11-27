@@ -29,6 +29,16 @@ export class UserGetMeResponseDto {
   @ApiProperty({ enum: UserStatus, example: UserStatus.ACTIVE })
   status: UserStatus;
 
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Why the account is locked; null unless status is locked',
+  })
+  lockReason: string | null;
+
+  @ApiProperty({ type: Date, nullable: true })
+  lockedAt: Date | null;
+
   @ApiProperty({ type: String, format: 'uri', nullable: true })
   avatarUrl: string | null;
 
@@ -46,6 +56,8 @@ export class UserGetMeResponseDto {
     dto.phone = user.phone.value;
     dto.role = user.role;
     dto.status = user.status;
+    dto.lockReason = user.lockReason ?? null;
+    dto.lockedAt = user.lockedAt ?? null;
     dto.avatarUrl = null;
     dto.payoutAccount = payoutAccount
       ? PayoutAccountResponseDto.fromDomain(payoutAccount)

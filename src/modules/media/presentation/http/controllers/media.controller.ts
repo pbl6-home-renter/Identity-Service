@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -24,9 +25,13 @@ import { AuthenticatedUser } from 'shared/application/auth/authenticated-user';
 import { UserRole } from 'shared/domain/enums/user-role.enum';
 import { Uuid } from 'shared/domain/value-objects/uuid.vo';
 import {
+  AllowLocked,
   Public,
   Roles,
 } from 'shared/presentation/decorators/auth/access-control.decorators';
+import { AuthErrorCode } from 'shared/application/auth/auth-error-code';
+import { UserStatus } from 'shared/domain/enums/user-status.enum';
+import { MediaPurpose } from '../../../domain/enums/media-purpose.enum';
 import { CurrentUser } from 'shared/presentation/decorators/auth/current-user.decorator';
 import { ApiSuccessResponse } from 'shared/presentation/decorators/api-success-response.decorator';
 import { ResponseCode } from 'shared/presentation/decorators/response-code.decorator';
@@ -59,6 +64,8 @@ export class MediaController {
 
   @Post('presign-upload')
   @Roles(...ALL_ROLES)
+  // P13-D109: a locked account may only upload appeal attachments.
+  @AllowLocked()
   @HttpCode(HttpStatus.CREATED)
   @ResponseCode(MediaResponseCodeConstant.MEDIA_UPLOAD_TICKET_ISSUED)
   @ApiOperation({
@@ -80,6 +87,12 @@ export class MediaController {
     @Body() request: MediaPresignUploadRequestDto,
     @Res({ passthrough: true }) response: Response,
   ): Promise<MediaPresignUploadResponseDto> {
+    if (
+      user.status === UserStatus.LOCKED &&
+      request.purpose !== MediaPurpose.APPEAL_ATTACHMENT
+    ) {
+      throw new ForbiddenException({ code: AuthErrorCode.ACCOUNT_LOCKED });
+    }
     const ticket: MediaUploadTicketResult = await this.commandBus.execute(
       MediaPresignUploadCommand.create(user, request),
     );
@@ -89,6 +102,8 @@ export class MediaController {
 
   @Post(':mediaId/complete-upload')
   @Roles(...ALL_ROLES)
+  // Only the uploader completes, and a locked uploader can only hold appeal attachments.
+  @AllowLocked()
   @HttpCode(HttpStatus.OK)
   @ResponseCode(MediaResponseCodeConstant.MEDIA_UPLOAD_COMPLETED)
   @ApiOperation({

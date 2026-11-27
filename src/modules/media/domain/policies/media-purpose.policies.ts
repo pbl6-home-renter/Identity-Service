@@ -163,6 +163,23 @@ export const MEDIA_PURPOSE_POLICIES: Readonly<
     ownerAuthorizationRequired: true,
     allowDelete: false,
   },
+
+  // P13-D109: only the sender and admins (MediaAccessPolicy) can read these.
+  [MediaPurpose.APPEAL_ATTACHMENT]: {
+    ownerTypes: [MediaOwnerType.USER],
+    visibility: MediaVisibility.PRIVATE,
+    contentTypes: IMAGE_AND_PDF_CONTENT_TYPES,
+    canUpload: isSelf,
+    canRead: isSelf,
+  },
+
+  [MediaPurpose.REPORT_EVIDENCE]: {
+    ownerTypes: [MediaOwnerType.USER],
+    visibility: MediaVisibility.PRIVATE,
+    contentTypes: IMAGE_CONTENT_TYPES,
+    canUpload: isSelf,
+    canRead: isSelf,
+  },
 };
 
 export function policyOf(purpose: MediaPurpose): MediaPurposePolicy {

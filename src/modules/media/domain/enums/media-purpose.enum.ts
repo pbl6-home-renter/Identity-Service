@@ -11,4 +11,6 @@ export enum MediaPurpose {
   ISSUE_PHOTO = 'issue_photo',
   CHAT_ATTACHMENT = 'chat_attachment',
   CONVERSATION_AVATAR = 'conversation_avatar',
+  APPEAL_ATTACHMENT = 'appeal_attachment',
+  REPORT_EVIDENCE = 'report_evidence',
 }

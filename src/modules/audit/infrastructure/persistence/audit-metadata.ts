@@ -18,11 +18,32 @@ export function sanitizeAuditMetadata(
           'Audit user.locked metadata requires a string lockReason',
         );
       }
-      return { lockReason: metadata.lockReason };
+      // Locked from a violation report (P13-D109).
+      return typeof metadata.reportId === 'string'
+        ? { lockReason: metadata.lockReason, reportId: metadata.reportId }
+        : { lockReason: metadata.lockReason };
     }
     case 'user.unlocked':
+      // Unlocked by accepting an appeal (P13-D109).
+      return typeof metadata?.appealId === 'string'
+        ? { appealId: metadata.appealId }
+        : {};
     case 'user.deleted':
       return {};
+    case 'appeal.rejected': {
+      if (
+        typeof metadata?.appealId !== 'string' ||
+        typeof metadata.rejectReason !== 'string'
+      ) {
+        throw new Error(
+          'Audit appeal.rejected metadata requires appealId and rejectReason',
+        );
+      }
+      return {
+        appealId: metadata.appealId,
+        rejectReason: metadata.rejectReason,
+      };
+    }
     case 'user.updated': {
       const fields = metadata?.changedFields;
       if (

@@ -1,5 +1,5 @@
 import { Inject } from '@nestjs/common';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { UNIT_OF_WORK_DI_TOKEN } from 'shared/application/di-tokens';
 import { IUnitOfWork } from 'shared/application/ports/unit-of-work.port';
 import { OUTBOX_DI_TOKEN } from 'modules/outbox/outbox.di-token';
@@ -10,6 +10,7 @@ import { IUserRepository } from '../../../domain/repositories/user.repository.in
 import { User } from '../../../domain/entities/user';
 import { UserNotFoundException } from '../../../domain/exceptions/user-not-found.exception';
 import { USERS_DI_TOKEN } from '../../../users.di-token';
+import { UserUnlockedByAdminEvent } from '../../events/user-unlocked-by-admin.event';
 import { UserUnlockCommand } from './user-unlock.command';
 
 @CommandHandler(UserUnlockCommand)
@@ -24,6 +25,7 @@ export class UserUnlockCommandHandler implements ICommandHandler<
     private readonly unitOfWork: IUnitOfWork,
     @Inject(OUTBOX_DI_TOKEN.REPOSITORY)
     private readonly outboxRepository: OutboxRepository,
+    private readonly eventBus: EventBus,
   ) {}
 
   @Audited<UserUnlockCommand, User>({
@@ -34,7 +36,7 @@ export class UserUnlockCommandHandler implements ICommandHandler<
     metadata: () => ({}),
   })
   async execute(command: UserUnlockCommand): Promise<User> {
-    return this.unitOfWork.run(async (context) => {
+    const unlocked = await this.unitOfWork.run(async (context) => {
       const user = await this.userRepository.findByIdForUpdate(
         command.userId,
         context,
@@ -64,5 +66,9 @@ export class UserUnlockCommandHandler implements ICommandHandler<
       );
       return user;
     });
+    this.eventBus.publish(
+      new UserUnlockedByAdminEvent(unlocked.id, command.adminId),
+    );
+    return unlocked;
   }
 }

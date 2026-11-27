@@ -1,0 +1,13 @@
+export class ModerationResponseCodeConstant {
+  static readonly APPEAL_CURRENT_FETCHED = 'APPEAL_CURRENT_FETCHED';
+  static readonly APPEAL_SUBMITTED = 'APPEAL_SUBMITTED';
+  static readonly APPEAL_LIST_FETCHED = 'APPEAL_LIST_FETCHED';
+  static readonly APPEAL_DETAIL_FETCHED = 'APPEAL_DETAIL_FETCHED';
+  static readonly APPEAL_ACCEPTED = 'APPEAL_ACCEPTED';
+  static readonly APPEAL_REJECTED = 'APPEAL_REJECTED';
+
+  static readonly REPORT_SUBMITTED = 'REPORT_SUBMITTED';
+  static readonly REPORT_LIST_FETCHED = 'REPORT_LIST_FETCHED';
+  static readonly REPORT_DETAIL_FETCHED = 'REPORT_DETAIL_FETCHED';
+  static readonly REPORT_RESOLVED = 'REPORT_RESOLVED';
+}
