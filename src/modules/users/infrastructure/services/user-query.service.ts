@@ -31,6 +31,18 @@ export class UserQueryService implements IUserQueryService {
     private readonly repository: Repository<UserEntity>,
   ) {}
 
+  async findActiveAdminIds(): Promise<Uuid[]> {
+    const rows = await this.repository
+      .createQueryBuilder('user')
+      .select('user.id', 'id')
+      .where('user.role = :role', { role: UserRole.ADMIN })
+      .andWhere('user.status = :status', { status: UserStatus.ACTIVE })
+      .andWhere('user.isDeleted = :isDeleted', { isDeleted: false })
+      .orderBy('user.id', 'ASC')
+      .getRawMany<{ id: Uuid }>();
+    return rows.map((row) => row.id);
+  }
+
   async countUsersByRoleAndStatus(): Promise<UserCountByRoleAndStatus[]> {
     const rows = await this.repository
       .createQueryBuilder('user')

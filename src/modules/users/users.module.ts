@@ -27,6 +27,7 @@ import { UserInternalController } from './presentation/http/controllers/user-int
 import { TenancyUserStatsService } from './infrastructure/services/tenancy-user-stats.service';
 import { UserLockPeriodTypeormEntity } from './infrastructure/persistence/user-lock-period.typeorm-entity';
 import { UserLockPeriodGetInternalQueryHandler } from './application/queries/user-lock-period-get-internal/user-lock-period-get-internal.query.handler';
+import { UserActiveAdminIdsInternalQueryHandler } from './application/queries/user-active-admin-ids-internal/user-active-admin-ids-internal.query.handler';
 
 const commandHandlers = [
   UserUpdateMeCommandHandler,
@@ -38,6 +39,7 @@ const commandHandlers = [
 ];
 
 const queryHandlers = [
+  UserActiveAdminIdsInternalQueryHandler,
   UserLockPeriodGetInternalQueryHandler,
   UserGetMeQueryHandler,
   UserListAdminQueryHandler,
