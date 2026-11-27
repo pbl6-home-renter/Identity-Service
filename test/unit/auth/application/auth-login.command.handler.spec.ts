@@ -150,6 +150,35 @@ describe('AuthLoginCommandHandler', () => {
     expect(tokenService.generateRefreshToken).not.toHaveBeenCalled();
   });
 
+  it('issues tokens carrying the locked status for a locked account', async () => {
+    const user = createUser(UserStatus.LOCKED);
+    const tokenService = createTokenService();
+    const authRepository = createAuthRepository();
+    const handler = new AuthLoginCommandHandler(
+      {
+        hash: jest.fn(async () => 'new-hash'),
+        compare: jest.fn(async () => true),
+      },
+      createUserRepository(user),
+      authRepository,
+      tokenService,
+    );
+
+    const result = await handler.execute(
+      new AuthLoginCommand('tenant@example.com', 'password'),
+    );
+
+    expect(result.user.status).toBe(UserStatus.LOCKED);
+    expect(tokenService.generateAccessToken).toHaveBeenCalledWith(
+      user.id,
+      UserRole.TENANT,
+      UserStatus.LOCKED,
+    );
+    expect(authRepository.saveRefreshToken).toHaveBeenCalledWith(
+      expect.any(RefreshToken),
+    );
+  });
+
   it('treats malformed identifiers as invalid credentials without repository lookup', async () => {
     const userRepository = createUserRepository(null);
     const handler = new AuthLoginCommandHandler(
